@@ -1,0 +1,21 @@
+# 运行期缓存
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# C/C++ 构建产物
+build/
+cmake-build-*/
+*.o
+*.obj
+*.exe
+
+# 本地环境
+.venv/
+venv/
+
+# 临时输出
+outputs/tmp/
+
