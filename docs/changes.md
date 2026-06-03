@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-03  重构双线并行计划与对接契约
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：原实施计划按“后端算法/实验展示”拆分，B 线明显依赖 A 线成熟产出，不能保证两人持续并行推进；同时缺少明确的 A/B 对接格式，存在方案字段、单位和节点语义不一致的风险。
+- **解决方案**：
+  - 将分工重构为 **A 线：路线构造与空间优化线** 和 **B 线：耗时审计、下界证明与参数分析线**。
+  - 重写 `docs/implementation-plan.md`，分别给出 A 线与 B 线的阶段计划，并明确第 (1)–(4) 问的主责与协作关系。
+  - 新增 `docs/contracts/route-plan-contract.md`，定义 `RoutePlan`、`Route`、`RouteMetrics`、`PlanMetrics`、`AuditResult` 等统一对接结构。
+  - 在 `AGENTS.md` 中补充 A/B 对接协议和契约变更规则，强调任何算法输出或审计输入不得绕过契约。
+  - 在 `docs/context.md` 中补充“路线方案”术语。
+- **影响文件**：`AGENTS.md`、`docs/context.md`、`docs/changes.md`、`docs/implementation-plan.md`、`docs/contracts/route-plan-contract.md`。
+
 ## 2026-06-02  工程初始化
 
 - **版本号**：未发布，仍处于第一个可行版本前。
