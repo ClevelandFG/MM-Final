@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-05  确认 Python 优先语言策略
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：项目语言此前仅列为 Python 或 C++ 候选，尚未形成明确实现策略；A/B 双线并行开发时也缺少明确的 Git 分支与合并规则。
+- **解决方案**：
+  - 确认项目尽可能只使用 Python，便于图算法、实验调度、可视化、TDD 和 A/B 对接契约落地。
+  - 保留后期在明确性能瓶颈或工程必要性出现时引入 C++ 加速核心的可能。
+  - 在 `docs/implementation-plan.md` 中明确 C++ 若引入，只能作为内部实现细节，不得绕过路线方案对接契约。
+  - 新增 `docs/git-workflow.md`，规定 `main` 稳定主干、A/B 短生命周期功能分支、`shared/...` 契约分支优先合并等协作规则。
+  - 在 `AGENTS.md` 和 `docs/implementation-plan.md` 中引用 Git 协作规范，强调共享契约和公共数据结构不得夹带在 A/B 功能分支中。
+- **影响文件**：`AGENTS.md`、`docs/implementation-plan.md`、`docs/changes.md`、`docs/git-workflow.md`。
+
 ## 2026-06-03  重构双线并行计划与对接契约
 
 - **版本号**：未发布，仍处于第一个可行版本前。
