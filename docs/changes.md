@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-06-05  沉淀环境依赖与附加交付分工
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：项目即将进入 Python 实现阶段，需要确认依赖配置方式、GUI 起步策略、核心算法依赖、环境配置分支规则，以及 GUI/可视化、书面报告、上台展示三项附加任务分工。
+- **解决方案**：
+  - 新增 `docs/environment-and-dependencies.md`，记录已确认的 `pyproject.toml` 依赖配置策略、GUI 起步策略、核心算法依赖、共享分支规则和待确认项。
+  - 确认可视化依赖栈采用 Matplotlib + NetworkX + Pillow/ImageIO + Plotly，动态展示第一阶段采用静态图 + GIF。
+  - 确认依赖声明当前只使用 `pyproject.toml`，并按主依赖、`viz`、`gui`、`dev` 分组。
+  - 确认采用 uv 管理环境同步和锁文件；提交 `pyproject.toml`、`uv.lock` 和环境创建说明，不提交 `.venv`。
+  - 在 `AGENTS.md` 中补充依赖配置入口和附加交付分工。
+  - 在 `docs/implementation-plan.md` 中补充环境与依赖策略、附加交付任务分工和新的待确认问题。
+  - 新增 `docs/setup-python-env.md`，说明当前空环境创建方式以及 `pyproject.toml` 建立后的 uv 同步方式。
+  - 在 `docs/detailed-plan-for-track-B.md` 中补充 B 线对 GUI 与可视化的职责、实现顺序和风险边界。
+- **影响文件**：`AGENTS.md`、`docs/environment-and-dependencies.md`、`docs/setup-python-env.md`、`docs/implementation-plan.md`、`docs/detailed-plan-for-track-B.md`、`docs/changes.md`。
+
+## 2026-06-05  新增 Track B 详细实施计划
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：`docs/implementation-plan.md` 面向全局协作，B 线工程师开工前仍缺少聚焦自身工作的细化执行顺序、测试入口、验收标准和风险清单。
+- **解决方案**：
+  - 新增 `docs/detailed-plan-for-track-B.md`，将 B 线拆分为契约落地、节点分类、方案评价、可行性审计、下界分析、24 小时组数判定、人员足够最短时间、参数敏感性分析等阶段。
+  - 明确 B 线的输入、输出、测试建议、验收标准和与 A 线的握手节奏。
+  - 强调 B 线不得绕过 `RoutePlan` 契约，不得把候选方案不可行直接等同于组数不可能。
+- **影响文件**：`docs/detailed-plan-for-track-B.md`、`docs/changes.md`。
+
 ## 2026-06-05  确认 Python 优先语言策略
 
 - **版本号**：未发布，仍处于第一个可行版本前。
