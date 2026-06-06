@@ -1,0 +1,19 @@
+{
+  "schema_version": "route-plan-v1",
+  "plan_id": "warn-extra-field",
+  "source": "manual_fixture",
+  "parameters": {},
+  "routes": [
+    {
+      "route_id": "R1",
+      "depot": "O",
+      "required_visit_order": ["A"],
+      "expanded_node_path": null,
+      "distance_km": null,
+      "metrics": null,
+      "note": "extra route field"
+    }
+  ],
+  "metrics": null,
+  "note": "extra plan field"
+}

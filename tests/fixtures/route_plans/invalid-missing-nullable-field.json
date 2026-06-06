@@ -1,0 +1,16 @@
+{
+  "schema_version": "route-plan-v1",
+  "plan_id": "invalid-missing-nullable-field",
+  "source": "manual_fixture",
+  "parameters": {},
+  "routes": [
+    {
+      "route_id": "R1",
+      "depot": "O",
+      "required_visit_order": ["A"],
+      "expanded_node_path": null,
+      "metrics": null
+    }
+  ],
+  "metrics": null
+}

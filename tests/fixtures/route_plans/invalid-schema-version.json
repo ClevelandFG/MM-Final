@@ -1,0 +1,17 @@
+{
+  "schema_version": "route-plan-v2",
+  "plan_id": "invalid-schema-version",
+  "source": "manual_fixture",
+  "parameters": {},
+  "routes": [
+    {
+      "route_id": "R1",
+      "depot": "O",
+      "required_visit_order": ["A"],
+      "expanded_node_path": null,
+      "distance_km": null,
+      "metrics": null
+    }
+  ],
+  "metrics": null
+}

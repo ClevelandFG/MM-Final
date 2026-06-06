@@ -1,0 +1,22 @@
+{
+  "schema_version": "route-plan-v1",
+  "plan_id": "schema-smoke-001",
+  "source": "manual_fixture",
+  "parameters": {
+    "T_hour": 2.0,
+    "t_hour": 1.0,
+    "speed_km_per_hour": 35.0,
+    "time_limit_hour": 24.0
+  },
+  "routes": [
+    {
+      "route_id": "R1",
+      "depot": "O",
+      "required_visit_order": ["C", "A", "33"],
+      "expanded_node_path": null,
+      "distance_km": null,
+      "metrics": null
+    }
+  ],
+  "metrics": null
+}

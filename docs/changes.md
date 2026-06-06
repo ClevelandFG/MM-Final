@@ -12,7 +12,20 @@
   - 在 `docs/contracts/route-plan-contract.md` 中补充 `required_visit_order` 与 `expanded_node_path` 的区别，明确 `O` 和辅助道路节点不得出现在必访顺序中。
   - 明确 nullable 字段必须保留字段名，暂未计算时写为 `null`，不得省略字段。
   - 在 `docs/detailed-plan-for-track-B.md` 的 B0 阶段补充已拍板决策清单，包括 shared 分支、dataclass、JSON 夹具、`tests/fixtures/route_plans/`、两类 smoke 样例、错误等级、额外字段 warning、内部结构化诊断、精确 schema 版本、B0 不复算指标、非法夹具范围和 pytest。
-- **影响文件**：`docs/contracts/route-plan-contract.md`、`docs/detailed-plan-for-track-B.md`、`docs/changes.md`。
+  - 明确 `O` 虽然是大写字母节点，但语义上是县政府所在地，不属于乡镇必访节点。
+- **影响文件**：`docs/context.md`、`docs/contracts/route-plan-contract.md`、`docs/detailed-plan-for-track-B.md`、`docs/changes.md`。
+
+## 2026-06-06  实现 B0 契约模型与夹具测试
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B0 需要将路线方案契约落地为可运行的数据模型、JSON 夹具和读取校验测试，作为后续评价器、审计器和 A/B 对接的共同入口。
+- **解决方案**：
+  - 新增 `pyproject.toml` 和 `uv.lock`，建立 pytest 开发依赖和 `src` 测试路径。
+  - 新增 `src/mm_final/contracts/route_plan.py`，使用标准库 `dataclass` 实现 `RoutePlan`、`Route`、`RouteMetrics`、`PlanMetrics`、`AuditResult` 和 B0 读取校验。
+  - 新增 `tests/fixtures/route_plans/` 下的 schema smoke、full coverage smoke、非法方案和额外字段 warning 夹具。
+  - 新增 `tests/test_route_plan_contract.py`，覆盖 schema 读取、完整覆盖、缺 nullable 字段、错误 schema 版本、`O`/辅助节点误入必访顺序、额外字段 warning 等 B0 决策。
+  - 更新环境说明，记录当前 `pyproject.toml` 已建立，`requires-python >=3.9` 是兼容 A 线现有环境的临时下界。
+- **影响文件**：`pyproject.toml`、`uv.lock`、`src/mm_final/`、`tests/fixtures/route_plans/`、`tests/test_route_plan_contract.py`、`docs/environment-and-dependencies.md`、`docs/setup-python-env.md`、`docs/changes.md`。
 
 ## 2026-06-05  沉淀环境依赖与附加交付分工
 
