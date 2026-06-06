@@ -8,16 +8,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Union
+
+from mm_final.network.nodes import (
+    AUXILIARY_NODES,
+    DEPOT,
+    REQUIRED_VISIT_NODES,
+    TOWN_NODES,
+    VILLAGE_NODES,
+)
 
 SCHEMA_VERSION = "route-plan-v1"
-DEPOT = "O"
-TOWN_NODES = tuple(
-    node for node in (chr(code) for code in range(ord("A"), ord("R") + 1)) if node != DEPOT
-)
-VILLAGE_NODES = tuple(str(index) for index in range(1, 36))
-AUXILIARY_NODES = tuple(f"U{index:02d}" for index in range(1, 6))
-REQUIRED_VISIT_NODES = frozenset(TOWN_NODES + VILLAGE_NODES)
 
 
 @dataclass(frozen=True)
@@ -126,7 +127,7 @@ ROUTE_FIELDS = {
 }
 
 
-def load_route_plan_json(path: str | Path) -> ValidationResult:
+def load_route_plan_json(path: Union[str, Path]) -> ValidationResult:
     with Path(path).open("r", encoding="utf-8") as handle:
         data = json.load(handle)
     return validate_route_plan_dict(data)

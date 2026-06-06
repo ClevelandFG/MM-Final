@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-06  实现 B1 公共路网底基
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：A/B 两线都需要统一的路网读取、节点分类、边权校验和连通性校验；同时项目协作复杂，需要智能体在关键操作前后主动提示 Git 分支、提交和推送策略。
+- **解决方案**：
+  - 在 `AGENTS.md` 中新增 Git 操作建议约束，要求智能体在关键操作前后说明应在哪个分支修改、是否同步 `main`、是否提交、是否推送、是否走 `shared/...` 分支。
+  - 新增 `mm_final.network` 包，提供 `NodeType`、节点常量、`classify_node`、`RoadNetwork`、正式 TSV 默认读取、自定义 TSV 读取和结构化路网诊断。
+  - 将 B0 契约模块中的节点常量迁移到 `mm_final.network.nodes`，由契约模块导入复用，避免节点语义重复维护。
+  - 将 `networkx` 加入主依赖，并更新 `uv.lock`。
+  - 新增 `tests/fixtures/road_networks/` 非法 TSV 夹具和 `tests/test_road_network.py`，覆盖节点分类、正式 TSV 节点/边数、必访节点覆盖、只读副本、表头错误、未知节点、非正边权、重复无向边和不连通分量诊断。
+- **影响文件**：`AGENTS.md`、`pyproject.toml`、`uv.lock`、`src/mm_final/network/`、`src/mm_final/contracts/route_plan.py`、`tests/fixtures/road_networks/`、`tests/test_road_network.py`、`docs/environment-and-dependencies.md`、`docs/changes.md`。
+
 ## 2026-06-06  沉淀 B1 公共路网底基决策
 
 - **版本号**：未发布，仍处于第一个可行版本前。
