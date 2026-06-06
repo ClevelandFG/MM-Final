@@ -12,7 +12,7 @@
 
 执行含义：
 
-- 后续正式建立 Python 包结构时，优先创建 `pyproject.toml`，依赖声明只以 `pyproject.toml` 为主入口。
+- 已建立 `pyproject.toml`，依赖声明只以 `pyproject.toml` 为主入口。
 - 运行依赖写入 `[project].dependencies`。
 - 可选功能依赖写入 `[project.optional-dependencies]`，例如 `gui`、`viz`、`dev`。
 - 暂不新增 `requirements.txt` 作为主依赖清单。
@@ -104,9 +104,9 @@ GUI 不作为第一阶段目标。先完成命令行、数据输出和报告图�
 
 ### 2.1 Python 版本
 
-等待 A 线工程师确认。版本确定前不固定 `requires-python` 的精确下界。
+等待 A 线工程师确认。当前 `pyproject.toml` 暂以 `requires-python >=3.9` 保持兼容，便于 A 线工程师在升级前也能运行基础契约测试。
 
-建议后续在 Python 3.11 或 3.12 中二选一，并确保两位工程师本机一致。
+建议后续统一到 Python 3.12.x；统一后再将 `requires-python` 收紧为 3.12 相关下界，并重新生成 `uv.lock`。
 
 ## 3. 可视化初步调研结论
 

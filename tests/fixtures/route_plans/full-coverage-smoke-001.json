@@ -1,0 +1,30 @@
+{
+  "schema_version": "route-plan-v1",
+  "plan_id": "full-coverage-smoke-001",
+  "source": "manual_fixture",
+  "parameters": {
+    "T_hour": 2.0,
+    "t_hour": 1.0,
+    "speed_km_per_hour": 35.0,
+    "time_limit_hour": 24.0
+  },
+  "routes": [
+    {
+      "route_id": "R1",
+      "depot": "O",
+      "required_visit_order": [
+        "A", "B", "C", "D", "E", "F", "G", "H", "I",
+        "J", "K", "L", "M", "N", "P", "Q", "R",
+        "1", "2", "3", "4", "5", "6", "7", "8", "9",
+        "10", "11", "12", "13", "14", "15", "16", "17",
+        "18", "19", "20", "21", "22", "23", "24", "25",
+        "26", "27", "28", "29", "30", "31", "32", "33",
+        "34", "35"
+      ],
+      "expanded_node_path": null,
+      "distance_km": null,
+      "metrics": null
+    }
+  ],
+  "metrics": null
+}
