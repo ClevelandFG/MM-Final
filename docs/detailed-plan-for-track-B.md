@@ -68,20 +68,42 @@ B 线不应该做：
 ### 输出
 
 - 契约数据模型或等价结构。
-- 最小手工方案夹具，例如 `manual-smoke-001`。
+- 最小手工方案夹具，例如 `manual-smoke-001` 或 `schema-smoke-001`。
+- 完整覆盖手工方案夹具，用于后续覆盖审计回归。
 - 至少一组非法方案夹具，用于审计错误测试。
+
+### 已拍板决策
+
+1. 公共 `RoutePlan` 数据模型、共享夹具和契约测试先走 `shared/...` 分支，不夹带在 `b/...` 功能分支中；建议分支名为 `shared/route-plan-model` 或同类名称。
+2. 契约模型使用标准库 `dataclass` 起步，不引入 Pydantic；后续若 schema 校验复杂再评估额外依赖。
+3. 手工方案和非法方案夹具统一使用 JSON 格式。
+4. 夹具目录使用 `tests/fixtures/route_plans/`。
+5. B0 使用两类手工样例：`schema-smoke` 用于验证字段结构和读取，不要求覆盖全部必访点；`full-coverage-smoke` 用于后续覆盖审计，要求覆盖全部乡镇和村节点。
+6. `required_visit_order` 是必访停留节点顺序，不是完整行驶路径。现实路线必须从 `O` 出发并回到 `O`，但 `O` 由 `depot` 和 `expanded_node_path` 表达，不写入 `required_visit_order`。
+7. `required_visit_order` 中出现 `O` 时判为 error，不自动删除，也不只给 warning。
+8. `required_visit_order` 中出现 `U01`–`U05` 等辅助道路节点时判为 error。
+9. Nullable 字段必须保留字段名，暂未计算时写为 `null`；缺少这些字段时判为契约错误。
+10. 遇到契约未定义的额外字段时给 warning，并尽量保留原始信息，不静默忽略。
+11. 错误诊断内部可使用结构化形式，例如 code、path、message；对外输出仍遵守 `AuditResult.errors` 和 `AuditResult.warnings` 的 `list[string]` 契约。
+12. `schema_version` 只接受精确值 `route-plan-v1`。
+13. B0 只检查字段结构和基础节点语义，不复算距离和指标；距离、耗时和指标一致性复核留到 B2。
+14. 第一批非法夹具至少覆盖四类核心错误：缺必备字段、错误 `schema_version`、`required_visit_order` 含 `O`、`required_visit_order` 含辅助道路节点。
+15. 测试框架采用 pytest；由于 pytest 和 `pyproject.toml` 属于共享环境基础，应通过 `shared/...` 分支落地。
 
 ### 建议测试
 
 - 能读取 `schema_version = route-plan-v1` 的方案。
-- 缺少必要字段时能报错。
+- 缺少必要字段或 nullable 字段时能报错。
 - `required_visit_order` 中出现 `U01` 等辅助道路节点时能报错。
-- `required_visit_order` 中包含首尾 `O` 时能给出警告或错误，避免把县政府误计入停留。
+- `required_visit_order` 中包含 `O` 时能报错，避免把县政府误计入停留。
+- `schema-smoke` 样例可用于读取测试，但不得被误标为完整覆盖合法方案。
+- 未定义额外字段能产生 warning，且不影响读取已定义字段。
 
 ### 验收标准
 
 - B 线不依赖 A 线算法，也能独立跑通契约读取测试。
 - 所有测试输入都使用契约字段，不使用临时字符串格式。
+- B0 结束时，A/B 两线对 `required_visit_order` 与 `expanded_node_path` 的含义没有歧义。
 
 ## 2. B1：路网语义与节点分类复核
 

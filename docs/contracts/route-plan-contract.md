@@ -12,6 +12,29 @@
 4. **必访点与通行点分离**：路线的必访顺序只包含乡镇和村；展开路径可以包含辅助道路节点。
 5. **审计可复现**：每个方案必须保留算法名、参数、随机种子和契约版本。
 
+## 1.1 必访顺序与实际通行路径
+
+本契约中必须严格区分两个概念：
+
+- `required_visit_order`：必访停留节点顺序，只表达该组人员真正需要巡视、停留和服务的乡镇或村节点。
+- `expanded_node_path`：原始道路网络上的实际通行节点序列，表达车辆真实经过的路径。
+
+因此，一条路线在现实中必须从 `O` 出发并最终回到 `O`，但 `O` 不写入 `required_visit_order`。`O` 的出发和返回语义由 `depot = "O"` 以及 `expanded_node_path` 的首尾节点表达。
+
+辅助道路节点 `U01`–`U05` 只能出现在 `expanded_node_path` 中，不能出现在 `required_visit_order` 中，因为它们不是巡视对象，不产生乡镇或村停留时间。
+
+示例：
+
+```json
+{
+  "depot": "O",
+  "required_visit_order": ["A", "3"],
+  "expanded_node_path": ["O", "U01", "A", "U01", "3", "O"]
+}
+```
+
+上例表示实际通行路径为 `O -> U01 -> A -> U01 -> 3 -> O`，但真正的必访停留顺序只有 `A -> 3`。
+
 ## 2. RoutePlan
 
 `RoutePlan` 表示一整套巡视方案。
@@ -32,6 +55,7 @@
 - `routes` 中的每条路线必须从 `O` 出发并回到 `O`。
 - 乡镇与村节点必须在全方案中被覆盖一次。
 - 辅助道路节点不得出现在 `required_visit_order` 中。
+- 标为 nullable 的字段必须保留字段名，暂未计算时写为 `null`，不得省略字段。
 
 ## 3. Route
 
@@ -51,8 +75,10 @@
 约束：
 
 - `expanded_node_path` 若存在，首尾必须都是 `O`。
-- `required_visit_order` 不写首尾 `O`，避免把县政府误计入停留点。
+- `required_visit_order` 不写首尾 `O`，也不得在中间写入 `O`；若出现 `O`，应视为契约错误。
+- `required_visit_order` 只能包含乡镇节点和村节点；若出现 `U01`–`U05` 等辅助道路节点，应视为契约错误。
 - 若 `expanded_node_path` 暂缺，B 线可以基于 `required_visit_order` 和最短路闭包复算展开路径。
+- `expanded_node_path`、`distance_km`、`metrics` 等 nullable 字段暂缺值时写为 `null`，但字段本身不得省略。
 
 ## 4. RouteMetrics
 
@@ -142,7 +168,7 @@
 }
 ```
 
-该样例不是最终路线，只用于验证 A/B 两线都能读写同一种结构。
+该样例不是最终路线，只用于验证 A/B 两线都能读写同一种结构。它属于 schema smoke 样例，不要求覆盖全部必访节点；完整覆盖样例应另行维护。
 
 ## 8. 实现落地方案
 

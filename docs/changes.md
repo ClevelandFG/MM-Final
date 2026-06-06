@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-06-06  沉淀 B0 契约落地决策
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B 线准备进入 B0 契约落地阶段，需要明确公共模型分支、数据模型形态、夹具格式、必访顺序语义、错误等级、nullable 字段口径和测试框架，避免 A/B 两线对 `RoutePlan` 的理解漂移。
+- **解决方案**：
+  - 在 `docs/contracts/route-plan-contract.md` 中补充 `required_visit_order` 与 `expanded_node_path` 的区别，明确 `O` 和辅助道路节点不得出现在必访顺序中。
+  - 明确 nullable 字段必须保留字段名，暂未计算时写为 `null`，不得省略字段。
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B0 阶段补充已拍板决策清单，包括 shared 分支、dataclass、JSON 夹具、`tests/fixtures/route_plans/`、两类 smoke 样例、错误等级、额外字段 warning、内部结构化诊断、精确 schema 版本、B0 不复算指标、非法夹具范围和 pytest。
+- **影响文件**：`docs/contracts/route-plan-contract.md`、`docs/detailed-plan-for-track-B.md`、`docs/changes.md`。
+
 ## 2026-06-05  沉淀环境依赖与附加交付分工
 
 - **版本号**：未发布，仍处于第一个可行版本前。
