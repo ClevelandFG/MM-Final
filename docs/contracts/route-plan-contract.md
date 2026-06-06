@@ -35,6 +35,20 @@
 
 上例表示实际通行路径为 `O -> U01 -> A -> U01 -> 3 -> O`，但真正的必访停留顺序只有 `A -> 3`。
 
+## 1.2 统一路网实现标准
+
+路线方案契约不仅约束 JSON 字段，也约束 A/B 两线解释节点和路网的方式。`shared/road-network-core` 已经确立的 `mm_final.network` 公共接口，是路线方案契约在实现层的统一标准。
+
+A/B 两线必须遵守：
+
+- 统一从 `data/raw/road_network.tsv` 读取正式道路网络；测试和扩展场景可以显式传入自定义 TSV 路径。
+- 统一使用 `mm_final.network.RoadNetwork` 表示道路网络，不得在 A 线或 B 线功能分支中另起一套公共路网语义。
+- 统一使用 `mm_final.network.nodes.NodeType`、`classify_node()`、`TOWN_NODES`、`VILLAGE_NODES`、`AUXILIARY_NODES`、`REQUIRED_VISIT_NODES` 等节点语义。
+- `O` 固定为 depot，不属于乡镇；`A`–`R` 中除 `O` 外为乡镇；`1`–`35` 为村；`U01`–`U05` 为辅助道路节点。
+- 正式 TSV 必须通过表头、三列、正边权、无未知节点、无重复无向边、必访节点存在、整图连通等校验。
+
+因此，A 线输出 `RoutePlan` 时，`required_visit_order`、`expanded_node_path` 和距离字段必须能被 B 线基于同一个 `RoadNetwork` 复算。若 A 线发现需要修改节点集合、路网读取、最短路公共接口或路线方案字段，必须先走 `shared/...` 分支更新公共标准、契约文档和测试。
+
 ## 2. RoutePlan
 
 `RoutePlan` 表示一整套巡视方案。
