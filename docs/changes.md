@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-06-06  确认 A/B 统一路网标准并新增 A 线计划
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：A 线可能稍晚开工，不能依赖人工等待确认；B1 已经落地的公共路网底基需要直接成为 A/B 两线统一标准，并在 A 线可见文档中明确提醒。
+- **解决方案**：
+  - 在 `AGENTS.md` 中明确 `shared/road-network-core` 中的路网读取、节点分类、边权校验、连通性校验和 `mm_final.network` 是 A/B 两线最终统一标准。
+  - 在 `docs/implementation-plan.md` 中新增统一路网标准说明，并更新 A1 阶段要求，要求 A 线复用 `mm_final.network`。
+  - 新增 `docs/detailed-plan-for-track-A.md`，提醒 A 线开工前确认共享路网标准、路线方案契约和 Git 分支规则，并建议先细化自己的执行计划。
+- **影响文件**：`AGENTS.md`、`docs/implementation-plan.md`、`docs/detailed-plan-for-track-A.md`、`docs/changes.md`。
+
 ## 2026-06-06  实现 B1 公共路网底基
 
 - **版本号**：未发布，仍处于第一个可行版本前。

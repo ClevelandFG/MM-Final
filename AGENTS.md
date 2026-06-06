@@ -18,6 +18,7 @@
 - **计时系统**：支持分步骤计时，用于定位性能瓶颈。
 - **实现尺度**：只写最小正确实现，避免过早膨胀。
 - **原始数据**：题面道路表固化到 `data/raw/road_network.tsv`；后续算法与测试统一从该文件读取，避免复制多份路网数据。
+- **统一路网标准**：B 线在 `shared/road-network-core` 中确立的路网读取、节点分类、边权校验、连通性校验和 `mm_final.network` 公共接口，是 A/B 两线最终统一标准。A 线开工前必须先阅读 `docs/detailed-plan-for-track-A.md`、`docs/detailed-plan-for-track-B.md` 的 B1 公共底基决策，并基于最新 `main` 使用 `mm_final.network`，不得另起一套路网语义。
 - **A/B 对接协议**：A 线负责路线构造，B 线负责耗时审计、下界证明与参数分析；两线必须统一使用 `docs/contracts/route-plan-contract.md` 定义的路线方案格式。任何算法输出或审计输入不得绕过该契约。
 
 ## 3. 文档与代码规范
