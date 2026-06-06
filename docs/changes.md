@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-06-06  沉淀 B1 公共路网底基决策
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B1 即将实现路网语义与节点分类复核，需要先明确哪些内容属于 A/B 共享底基，以及节点语义、TSV 读取、图结构、依赖、校验诊断和测试边界，避免 A/B 两线重复实现路网基础。
+- **解决方案**：
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B1 阶段补充 26 条已拍板决策。
+  - 确认 B1 公共底基在 `shared/road-network-core` 分支实现，代码放在 `mm_final.network`，节点常量迁到 `mm_final.network.nodes`。
+  - 确认使用 `NodeType` 枚举、自定义 `RoadNetwork` 包装 NetworkX、无向加权图、严格 TSV 校验、结构化诊断、非法 TSV 夹具和正式 TSV 节点/边数断言。
+  - 明确 B1 不实现最短路、路线评价器或 B2 内容，最短路能力留到后续 B2/A1 握手或新的共享分支。
+- **影响文件**：`docs/detailed-plan-for-track-B.md`、`docs/changes.md`。
+
 ## 2026-06-06  沉淀 B0 契约落地决策
 
 - **版本号**：未发布，仍处于第一个可行版本前。
