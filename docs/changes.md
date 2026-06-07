@@ -18,6 +18,20 @@
   - 新增 `tests/test_routing_core.py`，覆盖最短路、距离闭包、候选解评分、固定组数惩罚、分组组合、move primitive、导出器和方案池。
 - **影响文件**：`src/mm_final/network/road_network.py`、`src/mm_final/network/__init__.py`、`src/mm_final/routing/`、`src/mm_final/__init__.py`、`tests/test_routing_core.py`、`docs/changes.md`。
 
+## 2026-06-07  实现 B2 路线方案评价器
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B 线需要一个权威评价与报告复核入口，能对手工或 A 线输出的 `RoutePlan` 复算距离、停留时间、行驶时间、完成时间、瓶颈路线和均衡摘要，同时保留 warning/error 诊断但不提前替代 B3 审计器。
+- **解决方案**：
+  - 新增 `mm_final.evaluation.route_plan_evaluator`，提供 `EvaluationParameters`、`EvaluationResult`、`CoverageSummary`、`DistanceBalanceSummary` 和 `evaluate_route_plan()`。
+  - 评价器显式接收 `RoutePlan + RoadNetwork + EvaluationParameters`，若未传参数则从 `RoutePlan.parameters` 读取题面参数默认值。
+  - 复算每条路线的 `RouteMetrics` 和全方案 `PlanMetrics`，并在 `EvaluationResult` 中返回 `route_metrics_by_id`、`plan_metrics`、`expanded_paths_by_route_id`、`coverage_summary`、`bottleneck_route_ids`、`distance_balance` 和 `time_breakdown_by_route_id`。
+  - 对输入 `distance_km`、`Route.metrics`、`Plan.metrics` 逐字段复核，不一致时给 warning 并使用复算值；nullable metrics 为 `null` 时正常复算，不给 warning。
+  - 对空路线、遗漏必访点、重复必访点、展开路径与最短路展开不一致、展开路径相邻节点无边等情况输出结构化 diagnostic；其中展开路径无边使用 error 级 diagnostic，但仍按最短路口径复算指标。
+  - 提供 `EvaluationResult.to_dict()`，便于后续 GUI、报告和实验记录序列化。
+  - 新增 `tests/test_route_plan_evaluator.py`，覆盖小图复算、metrics 差异 warning、空路线 warning、覆盖摘要、展开路径差异、坏边诊断、瓶颈路线、距离均衡摘要、JSON 序列化和官方 B0 JSON 夹具 smoke。
+- **影响文件**：`src/mm_final/evaluation/`、`src/mm_final/__init__.py`、`tests/test_route_plan_evaluator.py`、`docs/changes.md`。
+
 ## 2026-06-06  沉淀 B2 方案评价器决策与均衡性口径
 
 - **版本号**：未发布，仍处于第一个可行版本前。
