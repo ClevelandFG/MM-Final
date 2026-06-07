@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-06-07  实现 B2 共享评分底座
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B2 需要先补齐 A/B 两线共同使用的快速评分核心，使 A 线后续能自然接入 `Clarke-Wright savings`、`k-medoids / cluster-first route-second`、`2-opt`、`relocate` 和模拟退火，同时避免 B 线评价器变成 A 线每一步优化的阻塞点。
+- **解决方案**：
+  - 在 `RoadNetwork` 上新增 `shortest_path()` 公共接口，返回 `ShortestPath(distance_km, node_path)`。
+  - 新增 `mm_final.routing` 中性包，提供 `CandidateSolution`、`CandidateRoute`、`DistanceMatrix`、`RoutePath`、`ObjectiveSpec`、`Score`、`ScoreDiagnostic`、`SolutionPool` 等共享结构。
+  - 实现候选解评分，覆盖路线距离、总距离、最大/最小路线距离、距离极差、总耗时、最大/最小路线耗时、耗时极差、空路线 penalty、固定组数 mismatch penalty、缺失/重复必访点 penalty 和轻量诊断。
+  - 实现基础 move primitive：路线片段反转、跨路线单节点迁移和节点交换；这些操作只生成新候选，不枚举邻域或执行搜索策略。
+  - 实现 `CandidateSolution -> RoutePlan` 导出器，默认保留 `expanded_node_path`、`distance_km` 和 `metrics` 为 `null`，也支持在提供距离矩阵时补全最短路展开路径和距离。
+  - 实现方案池 `SolutionPool`，按 `Score.sort_key` 保留 top-n 候选和当前最优。
+  - 新增 `tests/test_routing_core.py`，覆盖最短路、距离闭包、候选解评分、固定组数惩罚、分组组合、move primitive、导出器和方案池。
+- **影响文件**：`src/mm_final/network/road_network.py`、`src/mm_final/network/__init__.py`、`src/mm_final/routing/`、`src/mm_final/__init__.py`、`tests/test_routing_core.py`、`docs/changes.md`。
+
 ## 2026-06-06  沉淀 B2 方案评价器决策与均衡性口径
 
 - **版本号**：未发布，仍处于第一个可行版本前。

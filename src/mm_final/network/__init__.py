@@ -15,6 +15,7 @@ from mm_final.network.road_network import (
     NetworkDiagnostic,
     RoadNetwork,
     RoadNetworkLoadResult,
+    ShortestPath,
     load_road_network,
     validate_road_network_tsv,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "REQUIRED_VISIT_NODES",
     "RoadNetwork",
     "RoadNetworkLoadResult",
+    "ShortestPath",
     "TOWN_NODES",
     "VILLAGE_NODES",
     "classify_node",

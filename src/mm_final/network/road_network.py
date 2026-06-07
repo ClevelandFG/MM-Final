@@ -8,6 +8,7 @@ import csv
 from typing import Iterable, Optional, Union
 
 import networkx as nx
+from networkx import NetworkXNoPath, NodeNotFound
 
 from mm_final.network.nodes import ALL_KNOWN_NODES, REQUIRED_VISIT_NODES
 
@@ -25,6 +26,12 @@ class NetworkDiagnostic:
 
     def to_text(self) -> str:
         return f"{self.code} at {self.path}: {self.message}"
+
+
+@dataclass(frozen=True)
+class ShortestPath:
+    distance_km: float
+    node_path: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -52,6 +59,15 @@ class RoadNetwork:
 
     def edge_weight_km(self, source: str, target: str) -> float:
         return float(self._graph[source][target]["weight"])
+
+    def shortest_path(self, source: str, target: str) -> ShortestPath:
+        try:
+            node_path = tuple(nx.shortest_path(self._graph, source, target, weight="weight"))
+        except (NodeNotFound, NetworkXNoPath) as exc:
+            raise ValueError(f"No shortest path from {source!r} to {target!r}.") from exc
+
+        distance = float(nx.shortest_path_length(self._graph, source, target, weight="weight"))
+        return ShortestPath(distance_km=distance, node_path=node_path)
 
     def to_networkx(self) -> nx.Graph:
         return self._graph.copy()
