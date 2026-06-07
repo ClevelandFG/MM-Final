@@ -176,6 +176,15 @@ B 线不应该做：
 
 对任意合法或近似合法的 `RoutePlan` 复算距离、停留时间、行驶时间和完成时间。
 
+### 评价拆分原则
+
+B2 必须把“评价”拆成两个层次：
+
+- **共享快速评分核心**：面向 A 线内部高频优化调用，保持中性、可复用、尽量纯函数式。它负责最短路、距离闭包、候选解评分、目标函数、邻域操作、方案池和 `CandidateSolution -> RoutePlan` 导出，不负责给出最终审计结论。
+- **B 线权威评价与报告复核**：面向阶段性候选方案和最终结果，负责复算指标、生成 warning/diagnostic、对比输入指标和输出报告可用的评价结果。它可以复用共享评分核心，但不得成为 A 线每一步优化的人工或工程阻塞点。
+
+正式合法性判断、覆盖错误、路径错误、下界证明和结论解释仍属于 B3 及后续阶段；B2 只负责把共享评分底座与 B 线评价入口清楚分开。
+
 ### 输入
 
 - `RoutePlan`
@@ -195,6 +204,144 @@ B 线不应该做：
 - 村停留时间：路线中村节点数乘以 `t_hour`。
 - 单路线总耗时：行驶时间加总停留时间。
 - 完成时间：所有路线总耗时的最大值。
+
+### 已拍板决策
+
+1. B2 分两段推进：最短路公共接口和 A 线优化所需的最小共享评分底座先走 `shared/shortest-path-core` 或同类 `shared/...` 分支，评价器的审计诊断与报告复核本体再走 `b/...` 分支；最短路、候选解评分和导出能力属于 A/B 共享底基，方案审计解释属于 B 线职责。
+2. 最短路接口返回距离和节点路径，推荐结构为 `ShortestPath(distance_km, node_path)`。
+3. 最短路方法暴露在 `RoadNetwork` 上，例如 `RoadNetwork.shortest_path(source, target)`，调用方不得绕开封装直接依赖 NetworkX 细节。
+4. 公共接口支持单次最短路查询；B2 评价器内部可以缓存 `O` 与所有必访节点之间的最短路闭包。
+5. B2 同时计算最短路口径距离和 `expanded_node_path` 口径距离；评价输出以 `required_visit_order` 相邻必访点的最短路口径为准，并对两者差异给出诊断。
+6. `required_visit_order` 为空时，B2 允许评价为空路线，距离和耗时为 0，并给出 warning；是否作为合法巡视路线留到 B3 审计。
+7. 单路线距离公式固定为 `O -> required_visit_order -> O` 的相邻最短路之和，不信任输入 `distance_km` 作为评价来源。
+8. 停留时间只按必访停留节点计算：乡镇乘以 `T_hour`，村乘以 `t_hour`，`O` 和辅助道路节点不产生停留时间。
+9. B2 参数优先使用评价器调用时显式传入的值；缺省时再从 `RoutePlan.parameters` 读取。
+10. 默认参数使用题面默认值：`T_hour = 2.0`、`t_hour = 1.0`、`speed_km_per_hour = 35.0`、`time_limit_hour = 24.0`，但必须允许覆盖。
+11. 参数合法性规则为：`T_hour >= 0`、`t_hour >= 0`、`speed_km_per_hour > 0`、`time_limit_hour > 0`。
+12. 评价器不得原地修改输入 `RoutePlan`；应返回新的结构化评价结果。
+13. B2 输出结构包含 `route_metrics_by_id`、`plan_metrics` 和 `diagnostics`，不直接返回完整 `AuditResult`。
+14. 复用现有 `RouteMetrics` 和 `PlanMetrics` 数据类，新增 B2 私有 `EvaluationResult` 或等价结构；不修改 `RoutePlan` 契约字段。
+15. B2 复算输入中已有的 `metrics` 和 `distance_km`，发现不一致时给 warning；正式 error 判定留到 B3 审计器。
+16. 浮点容差按字段语义区分：距离容差 `1e-6 km`，时间容差 `1e-6 hour`。
+17. B2 内部保留 float 原值，不在后端评价阶段四舍五入；报告和 GUI 展示阶段再格式化。
+18. B2 第一阶段只计算契约已有均衡指标：`distance_range_km` 和 `time_range_hour`；标准差、均值、变异系数等统计指标留到后续参数分析或报告层扩展。
+19. 单条路线内重复出现必访节点时，B2 按输入顺序复算距离和停留时间，并给 warning；覆盖合法性留到 B3 判断。
+20. 跨路线重复节点时，B2 只按每条路线分别复算，不做全局覆盖合法性判断；重复分配错误留到 B3 审计。
+21. 若 `expanded_node_path` 相邻节点在正式路网中没有边，B2 对该路线给 diagnostic，但仍按 `required_visit_order` 的最短路口径复算指标。
+22. 若输入 `distance_km` 与 B2 复算距离不一致，B2 给 warning，并以复算值作为输出指标。
+23. B2 生成每条路线的最短路展开节点序列，作为评价结果的一部分，但不写回输入 `Route.expanded_node_path`。
+24. 拼接相邻最短路路径时，去掉后一段首节点，避免段边界出现连续重复节点。
+25. B2 测试夹具同时使用正式路网、极小人工路网和已有 B0 JSON 夹具；不等待 A 线方案成熟后再测试。
+26. 第一批 B2 测试覆盖单村、单乡镇、两点路线、空路线、含 `expanded_node_path`、输入 metrics 不一致等场景。
+27. B2 模块放在 `src/mm_final/evaluation/route_evaluator.py` 或同类 `mm_final.evaluation` 包中，不放在契约模型或临时 B 私有脚本中。
+28. B2 阶段不引入新依赖，使用现有 NetworkX 和 Python 标准库完成最短路、距离与指标计算。
+
+### A 线优化接入的最小共享改进
+
+B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小共享底座。这里的共享底座服务于 A 线内部高频优化调用，不等同于 B3 之后的权威审计、下界证明和报告解释。
+
+推荐 A 线优先实现的五种经典算法为：
+
+1. `Clarke-Wright savings` 节约算法：用于多路线初解构造。
+2. `k-medoids / cluster-first route-second`：用于固定组数下的图距离分组。
+3. `2-opt`：用于路线内部访问顺序改进。
+4. `relocate` 节点迁移：用于路线之间的负载和距离均衡调整。
+5. 模拟退火：用于组合上述邻域操作，跳出局部最优。
+
+为支持以上五种方法，B2 最小共享改进并集为：
+
+- 在 `RoadNetwork` 上提供 `shortest_path()`，返回最短距离和实际节点路径。
+- 提供必访节点距离闭包或图距离矩阵，支持路线评分和 `k-medoids` 分组。
+- 提供 `CandidateSolution` 或等价内部候选解表示，保存多路线分组、每组访问顺序、算法来源、随机种子和运行参数。
+- 提供 `ObjectiveSpec` 与 `Score` 或等价评分结构，统一表达总距离、最大路线距离、距离极差、总耗时、最大路线耗时、超时惩罚等目标。
+- 提供路线距离和耗时快速计算能力，允许 A 线在局部搜索中高频调用。
+- 提供分组器接口：输入固定组数 `k` 和必访节点集合，输出若干组必访节点；分组器不负责组内访问顺序。
+- 提供组内路线构造器接口和组合函数，使“节点组 + 组内路线构造器”能被统一转换为 `CandidateSolution`。
+- 提供 `Clarke-Wright` 所需的路线合并后评分能力和候选解轻量检查，但不实现 savings 排序、合并策略或停止条件。
+- 提供 `2-opt` 路径反转 primitive，但不实现完整 `2-opt` 搜索策略。
+- 提供跨路线 `relocate` primitive，并支持 relocate 后的增量评分或快速重算，但不实现完整 relocate 搜索策略。
+- 提供模拟退火可调用的邻域操作集合，至少包含 `relocate`、`swap` 和 `2-opt` move primitive；温度、降温、接受概率和扰动选择由 A 线实现。
+- 明确空路线处理策略，避免固定组数算法生成无法解释的占位路线。
+- 支持距离均衡和耗时瓶颈两种目标口径，分别服务第 (1) 问和第 (2)–(4) 问。
+- 提供 `CandidateSolution -> RoutePlan` 导出器，确保 A 线正式候选方案仍统一进入路线方案契约。
+- 提供方案池，至少保存当前最优、若干候选、评分结果、算法参数和随机种子，便于 B 线后续审计比较。
+
+### B2 扩展已拍板决策
+
+以下决策对应 B2 新增共享评分底座后的问题 29 以后内容。核心原则是：B2 负责共享数据结构、评分函数、基础 move primitive、导出器和方案池；五种经典算法的主体由 A 线实现。
+
+29. 共享评分底座后续实现单独开 `shared/scoring-core` 或同类 `shared/...` 分支，不夹带在 B 线私有分支中。
+30. 共享评分核心放在 `mm_final.routing` 或同类中性包；`mm_final.evaluation` 保留给 B 线评价器和报告复核入口。
+31. B2 评价拆成三层：共享快速评分核心、B 线评价器、B3 可行性审计器。
+32. `CandidateSolution` 使用 frozen dataclass 和 tuple 路线表示，便于比较、缓存和测试。
+33. `CandidateSolution` 的每条路线只保存必访节点顺序，不保存首尾 `O`；`O` 由评分和导出阶段自动补入。
+34. 内部候选解允许暂时非法，但必须通过评分惩罚、轻量诊断或导出前修复机制暴露问题；不得静默导出为正式 `RoutePlan`。
+35. 目标函数同时支持词典序目标和加权惩罚目标。
+36. `Score` 至少包含距离、耗时、极差、惩罚项和排序 key，不只返回单个 float。
+37. 距离闭包覆盖 `O + REQUIRED_VISIT_NODES`；辅助节点作为最短路展开路径中的通行点出现。
+38. 距离闭包由单独 `DistanceMatrix` 或等价对象持有，不直接塞进 `RoadNetwork` 内部缓存。
+39. 路线距离计算同时返回距离和最短路展开节点路径，服务评价、导出和可视化。
+40. 固定组数下允许内部候选解暂时出现空路线；共享评分核心对空路线给 penalty，B2 评价器给 warning，正式合法性由 B3 审计阶段判定。
+41. 固定组数 `k` 的候选解必须保持 `k` 条路线；路线数不得在搜索中自动漂移。
+42. 分组器接口只返回节点组，不直接返回 `CandidateSolution`；B2 另提供组合函数，将“节点组 + 组内路线构造器”组装成 `CandidateSolution`。
+43. 组内路线构造器输入一个必访节点组，输出该组的访问顺序。
+44. B2 不实现 `Clarke-Wright savings` 主体；只提供距离闭包、路线合并后的评分函数和候选解轻量检查，A 线负责 savings 排序、合并策略和停止条件。
+45. B2 不实现完整 `2-opt` 搜索策略；只提供路线片段反转 primitive 和反转后的评分能力，A 线负责枚举片段、选择 first-improvement 或 best-improvement 以及停止条件。
+46. B2 不实现完整 relocate 搜索策略；只提供跨路线单节点迁移 primitive 和迁移后的评分能力，A 线负责选择迁移节点、插入位置和接受策略。
+47. B2 提供 `swap` primitive 作为共享基础邻域操作，但不实现完整 swap search。
+48. 模拟退火主体归 A 线；B2 只提供 `CandidateSolution`、`ObjectiveSpec`、`Score`、`2-opt`/`relocate`/`swap` move primitive、随机种子记录字段和评分函数。
+49. 运行元数据记录 `method`、`parameters`、`seed`、`runtime` 和 `score`。
+50. 方案池第一阶段保留 top-n 候选和当前最优，不急于实现复杂非支配前沿。
+51. `CandidateSolution -> RoutePlan` 导出时默认保留 `metrics = null`，由 B 线评价器复算；nullable 字段不得省略。
+52. 共享评分核心可以产生轻量 `ScoreDiagnostic`，但不得直接产出最终 `AuditResult`。
+53. B2 共享底座第一批测试覆盖距离闭包、`CandidateSolution` 评分、导出器、`2-opt`、`relocate` 和方案池。
+54. B2 新增共享评分底座阶段不引入额外依赖，继续使用 NetworkX 和 Python 标准库。
+55. B2 完成边界为：共享评分底座可被 A 线调用，B 线评价器可复算 `RoutePlan`；不要求 B 线实现五种 A 线算法主体。
+56. B2 不实现五种经典算法的主体；B2 只实现共享评分底座、数据结构、move primitive 和导出器。
+57. Move primitive 放在 `mm_final.routing.moves` 或同类中性模块，保持 A/B 两线都可复用。
+58. A 线算法主体后续放在 `mm_final.routing.algorithms`、`mm_final.routing.solvers` 或 A 线明确命名的同类模块中，不放进 B 线评价器。
+59. B2 的 move primitive 不包含最优搜索策略；只负责“给定一个 move，生成新候选并评分”，枚举和选择策略由 A 线实现。
+60. B2 不需要掌握 `Clarke-Wright savings`、`k-medoids` 或模拟退火的完整理论细节；只保证这些算法所需的输入输出接口稳定。
+
+### B2 b 段已拍板决策
+
+以下决策对应 B2 的 B 线权威评价与报告复核部分。该部分走 `b/...` 分支，复用共享评分底座，但不实现 A 线算法主体，也不替代 B3 可行性审计器。
+
+61. B2 的 b 段分支名使用 `b/route-plan-evaluator`。
+62. B 线评价器模块放在 `mm_final.evaluation.route_plan_evaluator`。
+63. B2 评价器入口函数命名为 `evaluate_route_plan()`。
+64. B2 评价器输入为 `RoutePlan + RoadNetwork + EvaluationParameters`。
+65. 评价参数数据结构命名为 `EvaluationParameters`，不复用共享评分目标 `ObjectiveSpec`。
+66. B2 评价结果数据结构命名为 `EvaluationResult`。
+67. `EvaluationResult` 至少包含 `plan_id`、`route_metrics_by_id`、`plan_metrics`、`diagnostics` 和 `expanded_paths_by_route_id`。
+68. Diagnostic 使用结构化形式：`Diagnostic(code, severity, path, message)`。
+69. Diagnostic severity 使用 `info`、`warning`、`error` 三档。
+70. B2 可以产生 error 级 diagnostic，用于参数非法或无法复算等阻断评价的问题，但不直接给出最终合法性结论。
+71. B2 只负责复算和诊断；B3 负责判定路线方案是否合法。
+72. 输入 `metrics` 与复算结果不一致时，B2 给 warning，并使用复算值作为输出。
+73. 输入 `distance_km` 与复算结果不一致时，B2 给 warning，并使用复算值作为输出。
+74. B2 对输入中已提供的 `RouteMetrics` 和 `PlanMetrics` 字段逐字段比较。
+75. 输入 `metrics` 缺失或为 `null` 时，B2 正常复算，不给 warning。
+76. B2 在 `EvaluationResult` 中给出补全后的展开路径，不写回输入 `RoutePlan`。
+77. 输入 `expanded_node_path` 与复算展开路径不一致时，B2 给 warning，并保留复算展开路径。
+78. 输入 `expanded_node_path` 中相邻节点无边时，B2 给 diagnostic，建议 severity 为 `error`，但仍按最短路口径复算路线指标。
+79. 空路线在 B2 评价器中输出 warning，指标按 0 计算。
+80. 路线内重复必访点时，B2 给 warning，并按出现次数复算停留时间。
+81. 跨路线重复必访点时，B2 给 warning，并分别复算各路线。
+82. 遗漏必访点时，B2 给 warning；完整覆盖合法性由 B3 审计。
+83. B2 计算覆盖摘要，包括 covered、missing 和 duplicated，但不据此给出最终合法性结论。
+84. B2 输出包含 `is_within_time_limit`，该字段来自复算后的 `PlanMetrics`。
+85. B2 输出瓶颈路线信息。
+86. 若多条路线并列瓶颈，B2 输出 `bottleneck_route_ids` 列表。
+87. B2 输出距离均衡摘要，除 `distance_range_km` 外，还包含最长路线和最短路线的 route id。
+88. B2 输出每条路线的耗时分解，包括行驶时间、乡镇停留、村停留和总停留。
+89. B2 核心评价器不自动保存文件，只返回结构化结果。
+90. `EvaluationResult` 提供 `to_dict()` 或等价 JSON 序列化辅助。
+91. B2 第一版不提供 Markdown 报告函数，Markdown 留给后续报告层。
+92. B2 第一批测试覆盖复算距离/耗时、metrics 差异 warning、空路线 warning、展开路径差异和瓶颈路线。
+93. B2 b 段测试夹具使用 B0 JSON、小图人工路网和正式路网抽样。
+94. B2 b 段不依赖 A 线算法完成，用手工 `RoutePlan` 夹具独立推进。
+95. B2 b 段完成标准为：能对手工 `RoutePlan` 输出结构化 `EvaluationResult`，并复算所有指标和诊断；不要求审计最终合法性，也不实现 A 线算法。
 
 ### 建议测试
 

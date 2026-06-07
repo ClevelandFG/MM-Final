@@ -4,6 +4,23 @@
 
 ---
 
+## 2026-06-06  沉淀 B2 方案评价器决策与均衡性口径
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B2 方案评价器即将实现，需要明确最短路公共接口、评价器边界、参数来源、距离与停留时间口径、诊断策略、输出结构、测试夹具和模块位置；同时“均衡性”在题面中表述较模糊，需要给出项目内的明确解释。
+- **解决方案**：
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B2 阶段补充 28 条已拍板决策，确认最短路公共接口先走 `shared/shortest-path-core`，评价器本体走 `b/...` 分支。
+  - 在 B2 目标下新增评价拆分原则，明确共享快速评分核心服务 A 线高频优化，B 线权威评价与报告复核服务阶段性候选方案和最终结果。
+  - 在 B2 规划中补充 A 线优化接入所需的最小共享改进并集，包括最短路闭包、`CandidateSolution`、`ObjectiveSpec`、路线评分、邻域操作、导出器和方案池。
+  - 沉淀 B2 扩展决策，包括共享评分底座分支、`mm_final.routing` 中性包、三层评价拆分、`CandidateSolution`、`DistanceMatrix`、`Score`、空路线 penalty/warning、分组器输出节点组、move primitive、方案池、导出器和完成边界。
+  - 明确 B2 不实现五种经典算法主体，只提供 `Clarke-Wright savings`、`k-medoids`、`2-opt`、`relocate` 和模拟退火所需的稳定接口与基础操作；算法主体留给 A 线。
+  - 沉淀 B2 b 段权威评价与报告复核决策，包括 `b/route-plan-evaluator` 分支、`mm_final.evaluation.route_plan_evaluator` 模块、`evaluate_route_plan()` 入口、`EvaluationParameters`、`EvaluationResult`、结构化 diagnostic、指标逐字段复核、覆盖摘要、瓶颈路线、距离均衡摘要、序列化辅助和测试夹具范围。
+  - 在 `docs/detailed-plan-for-track-A.md` 与 `docs/implementation-plan.md` 中为 A 线推荐五种优先实现的经典算法：`Clarke-Wright savings`、`k-medoids / cluster-first route-second`、`2-opt`、`relocate` 和模拟退火。
+  - 明确 B2 负责复算与诊断，不提前承担 B3 的合法性终审；输出 `route_metrics_by_id`、`plan_metrics` 和 `diagnostics`。
+  - 在 `docs/context.md` 中补充均衡性的术语解释，区分路线距离、总耗时、服务节点数等不同工作负载口径。
+  - 在 `docs/implementation-plan.md` 中补充第 (1) 问初期按路线距离均衡理解，第 (2)–(4) 问按耗时和瓶颈路线理解。
+- **影响文件**：`docs/detailed-plan-for-track-A.md`、`docs/detailed-plan-for-track-B.md`、`docs/context.md`、`docs/implementation-plan.md`、`docs/changes.md`。
+
 ## 2026-06-06  补充文档导航与路线契约中的统一路网标准
 
 - **版本号**：未发布，仍处于第一个可行版本前。
