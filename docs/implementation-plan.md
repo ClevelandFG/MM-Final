@@ -283,8 +283,12 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - B3 本体走 `b/route-plan-auditor` 分支；只有契约字段、共享夹具或公共审计口径变化才切到 `shared/...`。
 - 审计器放在 `mm_final.evaluation.route_plan_auditor`，入口建议为 `audit_route_plan(plan, road_network, parameters=None, mode=...) -> AuditResult`。
 - B3 第一版支持 `candidate` 与 `final` 两种模式；`final` 是严格终审，`candidate` 用于 A 线中间候选方案诊断。
+- B3 核心入口只接收已解析的 `RoutePlan`；无法解析的 JSON 方案由 helper 转换为 `schema_valid = false` 的文件级审计结果。
+- `candidate` 模式中 schema 错误和展开路径坏边仍为 error，覆盖遗漏、重复、空路线和 metrics 不一致降级为 warning。
 - 空路线、遗漏必访点、重复必访点、`route_id` 重复、辅助节点误入必访顺序、展开路径坏边和已提供指标不一致等问题，在 `final` 模式下均应给出明确错误或无效分类。
 - 24 小时上限不属于 B3 路线合法性；超时结论留给 B5 最少组数判定流程使用。
+- B3 第一版不修改 `AuditResult` 新增机器可读 `mode` 字段；如 GUI 或报告生成器后续需要自动区分 `candidate` 与 `final`，再走 `shared/...` 评估契约变更。
+- B3 同时生成 Markdown 审计摘要，服务人工分析和报告草稿；Markdown 只作为结构化审计结果的派生视图。
 
 完成标准：
 

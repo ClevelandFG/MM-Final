@@ -410,29 +410,11 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 12. 参数来源沿用 B2 口径：显式参数优先，其次读取 `RoutePlan.parameters`，最后使用题面默认值。
 13. B3 内部可继续使用 `Diagnostic(code, severity, path, message)` 分类；对外输出仍遵守 `AuditResult.errors` 和 `AuditResult.warnings` 的 `list[string]` 契约，不为 B3 第一版修改 `AuditResult` 字段。
 14. B3 第一批测试优先用代码构造小图和 `RoutePlan`，覆盖合法方案、遗漏节点、重复节点、空路线、坏展开路径、指标不一致和重复 `route_id`；若新增可复用 JSON 夹具，应先确认是否属于共享契约夹具。
-
-### 待继续拍板的问题
-
-15. **无法解析的方案如何进入 B3 审计结果**：
-    - A. 核心 `audit_route_plan()` 只接收已解析的 `RoutePlan`，另提供 helper 接收 `ValidationResult` 或 JSON 路径，解析失败时返回 `schema_valid = false` 的 `AuditResult`。
-    - B. 核心 `audit_route_plan()` 同时接收 `RoutePlan` 和 `ValidationResult`。
-    - C. B3 不处理 schema 失败，只由 B0 测试负责。
-    - 建议：选 A，保持核心入口干净，同时让对外文件审计能覆盖 `schema_valid = false`。
-16. **`candidate` 模式的降级清单**：
-    - A. schema 和路径坏边仍为 error；覆盖遗漏、重复、空路线和 metrics 不一致降级为 warning，用于 A 线中间方案修复。
-    - B. 所有问题都降级为 warning，只要能读取就不阻断。
-    - C. `candidate` 与 `final` 的错误等级完全相同，只在文案中标注候选审计。
-    - 建议：选 A，既保留工程硬错误，又让 A 线能提交半成品候选方案池。
-17. **审计模式是否写入 `AuditResult`**：
-    - A. 不改契约，在 warning 或错误文案中标注 `candidate` 审计不等于最终审计。
-    - B. 走 `shared/...` 修改 `AuditResult`，新增 `mode` 字段。
-    - C. 不记录模式。
-    - 建议：第一版选 A；若 GUI 或报告层明确需要机器读取模式，再走 B。
-18. **B3 是否生成 Markdown/表格报告**：
-    - A. B3 只返回结构化 `AuditResult`；Markdown、表格和图示留给报告层或 B8。
-    - B. B3 同时生成 Markdown 审计摘要。
-    - C. B3 只导出 JSON。
-    - 建议：选 A，避免审计核心和展示格式耦合。
+15. 无法解析的方案通过 helper 进入 B3 文件级审计：核心 `audit_route_plan()` 只接收已解析的 `RoutePlan`，另提供 helper 接收 `ValidationResult` 或 JSON 路径；解析失败时 helper 返回 `schema_valid = false` 的 `AuditResult`。
+16. `candidate` 模式的降级清单为：schema 错误和展开路径坏边仍为 error；覆盖遗漏、重复、空路线和 metrics 不一致降级为 warning，用于 A 线中间方案修复。
+17. B3 第一版不修改 `AuditResult` 契约来新增机器可读的 `mode` 字段；在 warning、error 或 Markdown 摘要中标注 `candidate` 审计不等于最终审计。
+18. 若后续 GUI、报告生成器或批量审计仪表盘需要自动过滤、排序或门禁不同审计模式，例如只把 `final` 审计写入正式结论、只在调试区展示 `candidate` 审计、按模式统计错误率或避免把候选方案误发布，再走 `shared/...` 评估是否给 `AuditResult` 增加机器可读 `mode` 字段。
+19. B3 同时生成 Markdown 审计摘要，用于人工分析、A/B 沟通和报告草稿；Markdown 是结构化 `AuditResult` 的派生视图，不替代 `AuditResult`，也不承载额外数学口径。
 
 ### 建议测试
 
@@ -441,6 +423,9 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 - `required_visit_order` 出现 `U03` 时必须报错。
 - 路线未返回 `O` 时必须报错。
 - `distance_km` 与复算结果不一致时必须报错或至少 warning。
+- `candidate` 模式下覆盖遗漏、重复、空路线和 metrics 不一致应进入 warning，不应阻断中间候选方案诊断。
+- `final` 模式下同类问题应使对应有效性字段为 false。
+- Markdown 审计摘要应从 `AuditResult` 和 B2 复算结果派生，并明确标注候选审计或最终审计口径。
 
 ### 验收标准
 

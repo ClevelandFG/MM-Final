@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-09  确认 B3 审计模式与 Markdown 摘要决策
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B3 已确认需要 `candidate` 和 `final` 两种审计模式，但无法解析的方案如何进入审计、候选模式如何降级、是否修改 `AuditResult` 增加机器可读模式字段、是否同步生成 Markdown 摘要仍需拍板。
+- **解决方案**：
+  - 确认核心 `audit_route_plan()` 只接收已解析的 `RoutePlan`；无法解析的 JSON 或 `ValidationResult` 由 helper 返回 `schema_valid = false` 的 `AuditResult`。
+  - 确认 `candidate` 模式中 schema 错误和展开路径坏边仍为 error，覆盖遗漏、重复、空路线和 metrics 不一致降级为 warning。
+  - 确认第一版不修改 `AuditResult` 新增机器可读 `mode` 字段，只在 warning、error 或 Markdown 摘要中标注审计模式；若后续 GUI、报告生成器或批量审计仪表盘需要自动区分 `candidate` 与 `final`，再走 `shared/...` 评估契约变更。
+  - 确认 B3 同步生成 Markdown 审计摘要，作为结构化 `AuditResult` 的人工分析和报告草稿视图，不替代结构化结果。
+  - 在 `docs/context.md` 中补充审计模式术语。
+- **影响文件**：`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/context.md`、`docs/changes.md`。
+
 ## 2026-06-09  沉淀 B3 可行性审计器决策并同步 B 线编号
 
 - **版本号**：未发布，仍处于第一个可行版本前。
