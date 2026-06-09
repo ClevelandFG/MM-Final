@@ -432,6 +432,12 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 - A 线给出的任何候选方案都可以被 B 线审计。
 - 审计结果可用于指导 A 线修复，而不是只返回 True/False。
 
+### 已落地能力
+
+- `mm_final.evaluation.route_plan_auditor` 提供 `audit_route_plan()`、`audit_validation_result()`、`audit_route_plan_json()` 和 `audit_result_to_markdown()`。
+- 核心审计器复用 B2 `evaluate_route_plan()`，将覆盖、路径、指标和 schema 诊断分类为 `AuditResult` 的四类有效性字段、错误列表和警告列表。
+- `candidate` 模式用于中间方案诊断，`final` 模式用于正式结果终审；Markdown 摘要由结构化审计结果派生，服务人工复核与报告草稿。
+
 ## 5. B4：组数下界与不可能性分析
 
 ### 目标

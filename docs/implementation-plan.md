@@ -295,6 +295,7 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 不合法方案能给出具体错误列表。
 - 合法方案能给出 `AuditResult`。
 - 审计器不依赖 A 线具体算法。
+- 当前已落地 `audit_route_plan()`、`audit_validation_result()`、`audit_route_plan_json()` 和 `audit_result_to_markdown()`，可对手工或 A 线候选 `RoutePlan` 做结构化审计和 Markdown 摘要。
 
 ### 阶段 B4：组数下界与不可能性分析
 

@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-06-09  实现 B3 可行性审计器
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B2 已能复算指标并输出诊断，但仍缺少 B3 的最终合法性判定层；A 线候选方案需要能被 B 线按 `candidate` 或 `final` 口径审计，并得到可用于修复沟通的错误、警告和 Markdown 摘要。
+- **解决方案**：
+  - 新增 `mm_final.evaluation.route_plan_auditor`，提供 `audit_route_plan()`、`audit_validation_result()`、`audit_route_plan_json()` 和 `audit_result_to_markdown()`。
+  - `audit_route_plan()` 复用 B2 `evaluate_route_plan()`，不重新实现距离或耗时计算，并将 schema、覆盖、路径和指标诊断分类到 `AuditResult.schema_valid`、`coverage_valid`、`route_valid` 和 `metric_valid`。
+  - 实现 `candidate` 与 `final` 两种审计模式：`candidate` 保留 schema 和展开路径坏边为硬错误，将覆盖遗漏、重复、空路线和 metrics 不一致降级为 warning；`final` 将这些问题作为正式审计失败原因。
+  - 实现文件级 helper，使无法解析的 JSON 或 `ValidationResult` 也能返回 `schema_valid = false` 的 `AuditResult`。
+  - 实现 Markdown 审计摘要，标注审计模式、四类有效性字段、复算指标、错误和警告，用于人工分析和报告草稿。
+  - 新增 `tests/test_route_plan_auditor.py`，覆盖合法 final 审计、final 错误分类、candidate 降级、schema helper、JSON helper 和 Markdown 摘要。
+  - 在 B 线详细计划和实施计划中记录 B3 已落地能力。
+- **影响文件**：`src/mm_final/evaluation/route_plan_auditor.py`、`src/mm_final/evaluation/__init__.py`、`tests/test_route_plan_auditor.py`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/changes.md`。
+
 ## 2026-06-09  确认 B3 审计模式与 Markdown 摘要决策
 
 - **版本号**：未发布，仍处于第一个可行版本前。
