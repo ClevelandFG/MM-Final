@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-06-09  沉淀 B3 可行性审计器决策并同步 B 线编号
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：`docs/implementation-plan.md` 中 B 线阶段编号仍沿用旧口径，将 B3 写成“组数下界与不可能性分析”，与 `docs/detailed-plan-for-track-B.md` 中已经细化的 B0-B8 编号不一致；同时 B3 可行性审计器的分支、模块、入口、审计模式和严格性规则需要沉淀，避免后续实现时和 B2 评价器或 B4 下界分析混在一起。
+- **解决方案**：
+  - 将 `docs/implementation-plan.md` 的 B 线阶段同步为 B0 契约落地、B1 路网语义、B2 方案评价器、B3 可行性审计器、B4 组数下界、B5 24 小时最少组数、B6 人员足够时最短完成时间、B7 参数敏感性分析、B8 GUI 与可视化交付。
+  - 修正 A/B 握手点中对 B 线阶段的旧引用，尤其是任意组数方案池对接由旧 `B4` 改为当前 `B5`。
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B3 阶段新增已拍板决策，确认 B3 本体走 `b/route-plan-auditor`，模块为 `mm_final.evaluation.route_plan_auditor`，核心入口为 `audit_route_plan(...) -> AuditResult`。
+  - 确认 B3 复用 B2 `evaluate_route_plan()`，作为 B0/B2 之上的合法性终审层；B3 不做下界、不实现 A 线算法、不修改 `AuditResult` 契约字段。
+  - 确认 B3 第一版支持 `candidate` 与 `final` 两种模式；`final` 是严格终审，`candidate` 用于 A 线中间候选方案诊断，具体降级清单留作后续第 16 题继续拍板。
+  - 在 `docs/context.md` 中补充可行性审计、候选审计和最终审计三个术语。
+- **影响文件**：`docs/implementation-plan.md`、`docs/detailed-plan-for-track-B.md`、`docs/context.md`、`docs/changes.md`。
+
 ## 2026-06-07  实现 B2 共享评分底座
 
 - **版本号**：未发布，仍处于第一个可行版本前。

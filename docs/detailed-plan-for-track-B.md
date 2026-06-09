@@ -394,6 +394,46 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 - 若 `expanded_node_path` 存在，相邻节点必须在原始路网中可达或能被解释为最短路展开结果。
 - 距离字段若存在，必须与 B 线复算值在容差内一致。
 
+### 已拍板决策
+
+1. B3 本体走 `b/route-plan-auditor` 分支；只有路线方案字段、单位、节点语义、共享测试夹具或公共审计口径变化时，才切到 `shared/...` 分支。
+2. B3 模块放在 `mm_final.evaluation.route_plan_auditor`，不放在契约模型或路线构造包中。
+3. B3 核心入口命名为 `audit_route_plan(plan, road_network, parameters=None, mode=...) -> AuditResult`；可额外提供读取 JSON 或处理读取结果的轻量 helper。
+4. B3 必须复用 B2 的 `evaluate_route_plan()` 进行指标复算和诊断分类，不重新实现距离、耗时和覆盖摘要计算，也不信任输入 `metrics` 作为审计来源。
+5. B3 第一版直接支持 `candidate` 和 `final` 两种模式；`candidate` 用于 A 线中间候选方案诊断，`final` 用于可进入结果讨论的严格终审。
+6. 空路线在 `final` 模式下判为 error；如后续 A 线方案池需要占位路线，由 `candidate` 模式或显式参数承接，不把空路线默认为合法最终路线。
+7. 遗漏必访点、跨路线重复必访点和单路线内重复必访点在 `final` 模式下均使 `coverage_valid = false`。
+8. `expanded_node_path` 若存在，首尾必须为 `O`，相邻节点必须是原始路网真实边；由于最短路可能并列，提供路径与 B2 复算最短路展开不完全一致时先给 warning，不默认判为路径错误。
+9. 已提供的 `distance_km`、`Route.metrics` 或 `Plan.metrics` 与 B2 复算值不一致时，在 `final` 模式下使 `metric_valid = false`；对应字段为 `null` 时不处罚。
+10. 24 小时上限不属于 B3 的路线合法性；B3 可保留 B2 复算出的 `is_within_time_limit`，但最少组数与超时结论留给 B5。
+11. `route_id` 必须在同一 `RoutePlan` 内唯一；重复 `route_id` 判为 error，避免 B2 的 `route_metrics_by_id` 无法稳定表达每条路线。
+12. 参数来源沿用 B2 口径：显式参数优先，其次读取 `RoutePlan.parameters`，最后使用题面默认值。
+13. B3 内部可继续使用 `Diagnostic(code, severity, path, message)` 分类；对外输出仍遵守 `AuditResult.errors` 和 `AuditResult.warnings` 的 `list[string]` 契约，不为 B3 第一版修改 `AuditResult` 字段。
+14. B3 第一批测试优先用代码构造小图和 `RoutePlan`，覆盖合法方案、遗漏节点、重复节点、空路线、坏展开路径、指标不一致和重复 `route_id`；若新增可复用 JSON 夹具，应先确认是否属于共享契约夹具。
+
+### 待继续拍板的问题
+
+15. **无法解析的方案如何进入 B3 审计结果**：
+    - A. 核心 `audit_route_plan()` 只接收已解析的 `RoutePlan`，另提供 helper 接收 `ValidationResult` 或 JSON 路径，解析失败时返回 `schema_valid = false` 的 `AuditResult`。
+    - B. 核心 `audit_route_plan()` 同时接收 `RoutePlan` 和 `ValidationResult`。
+    - C. B3 不处理 schema 失败，只由 B0 测试负责。
+    - 建议：选 A，保持核心入口干净，同时让对外文件审计能覆盖 `schema_valid = false`。
+16. **`candidate` 模式的降级清单**：
+    - A. schema 和路径坏边仍为 error；覆盖遗漏、重复、空路线和 metrics 不一致降级为 warning，用于 A 线中间方案修复。
+    - B. 所有问题都降级为 warning，只要能读取就不阻断。
+    - C. `candidate` 与 `final` 的错误等级完全相同，只在文案中标注候选审计。
+    - 建议：选 A，既保留工程硬错误，又让 A 线能提交半成品候选方案池。
+17. **审计模式是否写入 `AuditResult`**：
+    - A. 不改契约，在 warning 或错误文案中标注 `candidate` 审计不等于最终审计。
+    - B. 走 `shared/...` 修改 `AuditResult`，新增 `mode` 字段。
+    - C. 不记录模式。
+    - 建议：第一版选 A；若 GUI 或报告层明确需要机器读取模式，再走 B。
+18. **B3 是否生成 Markdown/表格报告**：
+    - A. B3 只返回结构化 `AuditResult`；Markdown、表格和图示留给报告层或 B8。
+    - B. B3 同时生成 Markdown 审计摘要。
+    - C. B3 只导出 JSON。
+    - 建议：选 A，避免审计核心和展示格式耦合。
+
 ### 建议测试
 
 - 遗漏一个村节点时，错误信息必须指出具体节点。
