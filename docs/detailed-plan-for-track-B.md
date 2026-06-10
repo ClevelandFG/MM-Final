@@ -617,6 +617,46 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 5. 若候选方案完成时间等于下界，形成强结论。
 6. 若候选方案高于下界，记录差距，并说明仍需 A 线或更强分析推进。
 
+### 已拍板决策
+
+1. B6 本体走 `b/unlimited-personnel-time` 分支；只有新增共享契约字段时才切到 `shared/...` 分支。
+2. B6 模块放在 `mm_final.evaluation.unlimited_personnel_time`，不放在 `mm_final.routing` 或 `mm_final.contracts` 中。
+3. B6 输出结构命名为 `UnlimitedPersonnelReport` 和 `ShortestTimeCandidateRecord` 或等价数据类，提供 `to_dict()` 和 Markdown 摘要 helper。
+4. B6 第一版不修改 `RoutePlan`、`AuditResult` 或下界数据结构契约；B6 结论是方案外证明与推荐材料。
+5. B6 自动生成 `singleton_certificate` 基线：每个必访点一条路线，用于证明上界等于 B4 单点往返下界。
+6. B6 与 A 线边界为：B6 生成证明基线并审计候选，A 线负责提供更优 secondary objective 的等最短时间候选。
+7. B6 核心入口接收 `candidate_plans: Iterable[RoutePlan]`，不按 `k` 归组，也不直接接收 `SolutionPool`。
+8. B6 文件 helper 第一版加载多个 `RoutePlan` JSON，不定义新的 unlimited-time candidate-pool envelope。
+9. 参数通过 `UnlimitedPersonnelParameters` 或等价结构显式传入，包含 `T_hour`、`t_hour`、`speed_km_per_hour`、`required_visit_nodes` 和 `time_tolerance_hour`。
+10. 24 小时上限不作为 B6 候选合法性条件；它只可作为审计指标或展示参考，因为第 (3) 问讨论的是最短完成时间。
+11. B6 优先接收已有 `LowerBoundReport`，没有则内部调用 B4，并使用 `unlimited_personnel_lower_bound_hour` 作为第 (3) 问 lower bound。
+12. 最短时间结论等级使用 `proven_shortest_time`、`incumbent_shortest_time` 和 `no_valid_candidate`。
+13. 候选进入推荐的合法性条件为：B3 final 审计四类 valid 全真且 `recomputed_metrics` 存在；不要求 `is_within_time_limit=True`。
+14. `completion_time_hour <= lower_bound_hour + tolerance` 视为等最短时间候选。
+15. 推荐路线排序先筛等最短时间候选，再按 `group_count`、`total_distance_km`、`time_range_hour`、`distance_range_km`、`plan_id` 排序。
+16. 单点一组基线可作为兜底推荐，但应以 `singleton_certificate` 状态标记为证明基线；若存在等最短时间且更少组的候选，优先推荐该候选。
+17. B6 第一版不搜索近邻合并，只审计 A 线或手工合并候选，并在报告中记录 secondary objective 改进空间。
+18. B6 不以 B5 为核心，只复用 B3 final 审计和 B4 下界；B5 的 24 小时最少组数判定不适合包装成 B6。
+19. 候选状态使用结构化枚举：`optimal_time_candidate`、`valid_slower_candidate`、`candidate_invalid`、`parse_failed`、`singleton_certificate`。
+20. B6 记录 `lower_bound_hour`、`best_completion_time_hour` 和 `gap_hour`；有 singleton 基线时 gap 应为 0。
+21. 默认允许最多必访点数条非空路线；B3 final 的覆盖与空路线规则会约束候选，不把路线数固定为 B5 最少组数。
+22. 重复 `plan_id` 记录 warning，仍逐个审计，内部使用稳定序号区分候选记录。
+23. 若候选 `RoutePlan.parameters` 与 B6 显式参数不一致，按 B6 参数重算并记录 warning。
+24. B6 核心只接已解析 `RoutePlan`；文件 helper 负责把解析失败 JSON 转成 invalid candidate record。
+25. `UnlimitedPersonnelReport` 引用推荐 `plan_id`、候选记录和审计结果；singleton baseline 可由 helper 另行生成，不把完整 `RoutePlan` 嵌入报告。
+26. B6 输出结构化 `UnlimitedPersonnelReport` 和 Markdown 摘要。
+27. B6 测试使用小图手算，覆盖单点下界、singleton 证明、等最短候选优先、合法但更慢候选、非法候选、JSON 解析失败和正式路网 smoke；不等待 A 线输出。
+28. B6 第一版完成标准为：能输出被证明的最短完成时间、推荐等最短时间路线记录、上下界差距、结论等级和 Markdown 摘要；不要求 A 线复杂优化完成。
+29. B7 复用 B6 参数化最短时间分析，扫描 `T`、`t`、`v` 对最短时间值和瓶颈节点的影响；该接续事项必须写入 B7 计划。
+
+### 当前落地接口
+
+- `mm_final.evaluation.unlimited_personnel_time` 提供 `UnlimitedPersonnelParameters`、`ShortestTimeCandidateRecord`、`UnlimitedPersonnelReport`、`build_singleton_certificate_plan()`、`analyze_unlimited_personnel_time()`、`analyze_unlimited_personnel_time_json_files()` 和 `unlimited_personnel_report_to_markdown()`。
+- `analyze_unlimited_personnel_time(road_network, candidate_plans=..., parameters=...)` 是 B6 核心入口，只接已解析的 `RoutePlan`，并自动把 `singleton_certificate` 记录放入候选记录。
+- `analyze_unlimited_personnel_time_json_files(...)` 是文件 helper，接收多个 RoutePlan JSON 路径；解析失败会进入 `parse_failed` 候选记录，不污染核心入口。
+- `build_singleton_certificate_plan(parameters=...)` 可单独生成单点一组 `RoutePlan`，供报告附件或后续可视化复用。
+- `UnlimitedPersonnelReport` 记录 `shortest_time_lower_bound_hour`、`best_completion_time_hour`、`gap_hour`、`recommended_plan_id`、`recommended_status`、`bottleneck_node` 和所有候选记录；若 singleton 基线有效，通常给出 `proven_shortest_time`。
+
 ### 继承 B4 的待接事项
 
 - 使用 B4 给出的无限人手最短完成时间通用下界，作为第 (3) 问的 lower bound。
@@ -624,6 +664,11 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 - 判断候选完成时间是否与 B4 下界合拢；若合拢，形成强结论；若未合拢，只能报告当前候选值、下界来源和剩余差距。
 - B4 不直接回答第 (3) 问最终结论这一点由 B6 接住；B6 负责说明最短完成时间下需要多少组、路线结构如何、以及是否仍需更强分析。
 - 若近邻节点合并能降低最大完成时间，B6 负责让 A 线或手工构造候选方案验证，不回退到 B4 做路线搜索。
+
+### 继承到 B7 的待接事项
+
+- B7 参数敏感性分析应复用 B6 的参数化最短时间分析能力，扫描 `T`、`t`、`v` 改变时最短完成时间值、瓶颈节点和单点一组基线结构如何变化。
+- B7 若比较不同参数下的候选路线，应继续使用 B3 final 审计与 B6 的上下界差距口径，不把启发式候选值写成强最优结论。
 
 ### 验收标准
 

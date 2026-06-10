@@ -26,6 +26,15 @@ from mm_final.evaluation.minimum_group_count import (
     default_minimum_group_k_values,
     minimum_group_report_to_markdown,
 )
+from mm_final.evaluation.unlimited_personnel_time import (
+    ShortestTimeCandidateRecord,
+    UnlimitedPersonnelParameters,
+    UnlimitedPersonnelReport,
+    analyze_unlimited_personnel_time,
+    analyze_unlimited_personnel_time_json_files,
+    build_singleton_certificate_plan,
+    unlimited_personnel_report_to_markdown,
+)
 from mm_final.evaluation.route_plan_evaluator import (
     CoverageSummary,
     DistanceBalanceSummary,
@@ -48,10 +57,16 @@ __all__ = [
     "LowerBoundReport",
     "MinimumGroupParameters",
     "MinimumGroupReport",
+    "ShortestTimeCandidateRecord",
+    "UnlimitedPersonnelParameters",
+    "UnlimitedPersonnelReport",
+    "analyze_unlimited_personnel_time",
+    "analyze_unlimited_personnel_time_json_files",
     "audit_result_to_markdown",
     "audit_route_plan",
     "audit_route_plan_json",
     "audit_validation_result",
+    "build_singleton_certificate_plan",
     "compute_lower_bound_report",
     "decide_minimum_group_count",
     "decide_minimum_group_count_json_files",
@@ -60,4 +75,5 @@ __all__ = [
     "evaluate_route_plan",
     "lower_bound_report_to_markdown",
     "minimum_group_report_to_markdown",
+    "unlimited_personnel_report_to_markdown",
 ]

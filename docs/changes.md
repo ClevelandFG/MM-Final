@@ -4,6 +4,23 @@
 
 ---
 
+## 2026-06-10  沉淀并实现 B6 人员足够最短完成时间
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B6 即将回答第 (3) 问，需要明确“人员足够时最短完成时间”的证明口径、B4 下界与单点一组基线的关系、A 线候选路线的职责边界，以及 B7 参数敏感性如何继承该分析能力，并将该口径落到可测试代码中。
+- **解决方案**：
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B6 阶段新增 29 条已拍板决策，确认 B6 走 `b/unlimited-personnel-time`，模块为 `mm_final.evaluation.unlimited_personnel_time`，输出 `UnlimitedPersonnelReport` 和 `ShortestTimeCandidateRecord`。
+  - 确认 B6 第一版不修改 `RoutePlan`、`AuditResult` 或 B4 下界结构；B6 是第 (3) 问的方案外证明与推荐材料。
+  - 确认 B6 自动生成单点一组 `singleton_certificate` 基线，用它与 B4 的 `unlimited_personnel_lower_bound_hour` 合成最短完成时间强证明。
+  - 确认 B6 不以 24 小时作为候选合法性门禁，只使用 B3 final 审计确认候选路线合法，并用上下界差距判断是否达到最短完成时间。
+  - 明确 B6 不搜索近邻合并，只审计 A 线或手工合并候选；若存在等最短时间且组数更少、总路程更短的候选，优先推荐该候选，否则单点一组基线兜底。
+  - 新增 `mm_final.evaluation.unlimited_personnel_time`，实现 `UnlimitedPersonnelParameters`、`ShortestTimeCandidateRecord`、`UnlimitedPersonnelReport`、`build_singleton_certificate_plan()`、`analyze_unlimited_personnel_time()`、`analyze_unlimited_personnel_time_json_files()` 和 `unlimited_personnel_report_to_markdown()`。
+  - B6 核心自动复用或生成 B4 `LowerBoundReport`，并把 singleton 基线作为候选记录参与推荐排序；等最短时间候选优先于 singleton 基线。
+  - 新增 B6 单测，覆盖单点下界、singleton 证明、等最短候选优先、合法但更慢候选、24 小时不作为门禁、非法候选、JSON 解析失败、singleton helper、`to_dict()`、Markdown 和正式路网 smoke。
+  - 在 B7 阶段补充继承事项：复用 B6 参数化最短时间分析，扫描 `T`、`t`、`v` 对最短完成时间值、瓶颈节点和单点一组基线结构的影响。
+  - 在 `docs/context.md` 补充单点一组基线和等最短时间候选术语。
+- **影响文件**：`src/mm_final/evaluation/unlimited_personnel_time.py`、`src/mm_final/evaluation/__init__.py`、`tests/test_unlimited_personnel_time.py`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/context.md`、`docs/changes.md`。
+
 ## 2026-06-10  沉淀并实现 B5 最少组数判定
 
 - **版本号**：未发布，仍处于第一个可行版本前。

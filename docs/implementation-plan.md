@@ -380,6 +380,26 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 最远节点或高停留负载节点是否形成瓶颈；
 - 最短完成时间下需要多少组及其路线结构。
 
+已确认口径：
+
+- B6 本体走 `b/unlimited-personnel-time` 分支，模块放在 `mm_final.evaluation.unlimited_personnel_time`。
+- B6 输出 `UnlimitedPersonnelReport` 和 `ShortestTimeCandidateRecord` 或等价结构，并提供 `to_dict()` 与 Markdown 摘要。
+- B6 第一版不修改 `RoutePlan`、`AuditResult` 或 B4 下界结构；B6 结论是方案外证明与推荐材料。
+- B6 自动生成单点一组 `singleton_certificate` 基线，用于证明上界等于 B4 的 `unlimited_personnel_lower_bound_hour`。
+- B6 核心入口接收不按 `k` 归组的 `RoutePlan` 候选集合；文件 helper 加载多个 RoutePlan JSON，不定义新的候选池 envelope。
+- 第 (3) 问不以 24 小时为合法性门禁；候选进入推荐只要求 B3 final 四类 valid 全真且复算指标存在。
+- 最短时间结论等级使用 `proven_shortest_time`、`incumbent_shortest_time` 或 `no_valid_candidate`；完成时间在下界容差内的候选视为等最短时间候选。
+- 推荐路线先筛等最短时间候选，再按组数、总路程、耗时极差、路程极差和 `plan_id` 排序；单点一组基线可兜底，但若有更少组的等最短时间候选应优先推荐候选。
+- B6 不搜索近邻合并，只审计 A 线或手工合并候选并记录 secondary objective 改进空间；不把 B5 包装成 B6。
+
+已落地接口：
+
+- 核心入口为 `analyze_unlimited_personnel_time(road_network, candidate_plans=..., parameters=...)`，只接已解析的 `RoutePlan`。
+- 文件入口为 `analyze_unlimited_personnel_time_json_files(...)`，加载多个 RoutePlan JSON，并把解析失败文件转成 `parse_failed` 候选记录。
+- `build_singleton_certificate_plan(parameters=...)` 生成单点一组 `RoutePlan`，供第 (3) 问证明基线、报告附件和后续可视化复用。
+- 输出数据类包括 `UnlimitedPersonnelParameters`、`ShortestTimeCandidateRecord` 和 `UnlimitedPersonnelReport`，其中 `UnlimitedPersonnelReport.to_dict()` 用于报告层、B7 和 B8 机器读取。
+- `unlimited_personnel_report_to_markdown()` 生成第 (3) 问人工分析和报告草稿所需的 Markdown 摘要。
+
 完成标准：
 
 - 给出最短完成时间候选值。
@@ -401,12 +421,14 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - `v` 改变时，行驶距离和停留时间在目标函数中的权重变化；
 - 路线合并、拆分、换点的临界条件；
 - 固定 3 组与其他组数下的对比。
+- 继承 B6 留后的参数化最短时间分析能力，扫描 `T`、`t`、`v` 对第 (3) 问最短完成时间值、瓶颈节点和单点一组基线结构的影响。
 
 完成标准：
 
 - 形成参数网格或若干代表性场景。
 - 输出瓶颈路线变化、完成时间变化和路线结构变化。
 - 形成报告可直接引用的结论和图表说明。
+- 若比较不同参数下的候选路线，继续使用 B3 final 审计和 B6 上下界差距口径，避免把启发式候选值写成强最优结论。
 
 ### 阶段 B8：GUI 与可视化交付
 
