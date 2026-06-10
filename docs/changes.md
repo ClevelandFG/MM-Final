@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-06-10  沉淀并实现 B5 最少组数判定
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B5 即将组合 B4 下界、A 线候选方案池和 B3 final 审计，需要明确结论合成层的输入、状态、候选排序、上下界差距和报告输出；同时需要回答 candidate-pool JSON 是否必做，以及候选池规模变大时是否使用 B2/共享评分预筛，并将已拍板口径落到可测试代码中。
+- **解决方案**：
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B5 阶段新增 27 条已拍板决策，确认 B5 走 `b/minimum-group-decision`，模块为 `mm_final.evaluation.minimum_group_count`，输出 `MinimumGroupReport`、`GroupDecisionRecord` 和 `CandidateDecisionRecord`。
+  - 确认 B5 第一版不修改 `RoutePlan`、`AuditResult` 或 B4 下界结构；核心输入为按 `k` 归组的 `RoutePlan` 集合，文件 helper 可加载多个 RoutePlan JSON 并归组。
+  - 明确新的 candidate-pool JSON envelope 不是必做项，可以长期不做；只有当多算法、多目录、跨进程或 GUI 批量交换需要统一元数据时，才走 `shared/...` 讨论候选池文件契约。
+  - 确认 B5 只用 B3 `final` 作为正式结论门禁，并只把 final-valid、组数匹配且 24 小时内完成的候选作为 feasible upper bound。
+  - 确认第一版不使用 B2/共享 `score_candidate()` 预筛；候选池很大时可添加可选预筛层，但预筛只用于排序、分批或截取进入终审的候选，不能替代 B3 final 或形成最少组数结论。
+  - 新增 `mm_final.evaluation.minimum_group_count`，实现 `MinimumGroupParameters`、`CandidateDecisionRecord`、`GroupDecisionRecord`、`MinimumGroupReport`、`decide_minimum_group_count()`、`decide_minimum_group_count_json_files()`、`default_minimum_group_k_values()` 和 `minimum_group_report_to_markdown()`。
+  - B5 核心可内部调用 B4 下界，也可复用调用方传入的 `LowerBoundReport`；`conclusion_status` 区分 `proven_minimum`、`incumbent_minimum` 和 `no_feasible_candidate`。
+  - 新增 B5 单测，覆盖下界强排除、候选可行、候选超时但证据不足、候选非法、组数不匹配、重复 plan_id、参数不一致、JSON 解析失败、`to_dict()`、Markdown 和正式路网 smoke。
+  - 在 `docs/context.md` 补充候选方案池和候选预筛术语。
+- **影响文件**：`src/mm_final/evaluation/minimum_group_count.py`、`src/mm_final/evaluation/__init__.py`、`tests/test_minimum_group_count.py`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/context.md`、`docs/changes.md`。
+
 ## 2026-06-10  沉淀并实现 B4 下界分析
 
 - **版本号**：未发布，仍处于第一个可行版本前。

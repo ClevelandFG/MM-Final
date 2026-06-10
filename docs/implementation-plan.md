@@ -341,6 +341,24 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 主攻第 (2) 问。
 - 从 `k=1` 开始，结合下界和 A 线候选方案判断 24 小时可行性。
 
+已确认口径：
+
+- B5 本体走 `b/minimum-group-decision` 分支，模块放在 `mm_final.evaluation.minimum_group_count`。
+- B5 输出 `MinimumGroupReport`、`GroupDecisionRecord` 和 `CandidateDecisionRecord` 或等价结构，并提供 `to_dict()` 与 Markdown 摘要。
+- B5 第一版不修改 `RoutePlan`、`AuditResult` 或 B4 下界结构；候选池以按 `k` 归组的 `RoutePlan` 集合作为核心输入。
+- 第一版不定义新的 candidate-pool JSON envelope；它不是必做项，可以长期不做。只有当多算法、多目录、跨进程或 GUI 批量交换需要统一元数据时，才走 `shared/...` 讨论候选池文件契约。
+- B5 可接收已有 `LowerBoundReport`，也可内部调用 B4；`lower_bound_impossible` 直接强排除，`not_excluded` 和 `insufficient_evidence` 继续审计候选池。
+- B5 只使用 B3 `final` 审计作为正式结论门禁；候选必须四类 valid 全真、复算指标存在、组数等于当前 `k` 且 24 小时内完成，才能形成 feasible upper bound。
+- 每个 `k` 的状态使用 `lower_bound_impossible`、`candidate_feasible`、`candidate_not_found`、`candidate_invalid`、`insufficient_evidence`；总报告结论等级使用 `proven_minimum`、`incumbent_minimum` 或 `no_feasible_candidate`。
+- 第一版不使用 B2/共享 `score_candidate()` 预筛；候选池很大时可加可选预筛层，但预筛只排序、分批或截取进入终审的候选，不能替代 B3 final 或形成最少组数结论。
+
+已落地接口：
+
+- 核心入口为 `decide_minimum_group_count(road_network, k_values=..., candidate_plans_by_k=..., parameters=...)`，只接已解析的 `RoutePlan`。
+- 文件入口为 `decide_minimum_group_count_json_files(...)`，按 `k` 加载多个 RoutePlan JSON，并把解析失败文件转成 invalid 候选记录。
+- 输出数据类包括 `MinimumGroupParameters`、`CandidateDecisionRecord`、`GroupDecisionRecord` 和 `MinimumGroupReport`，其中 `MinimumGroupReport.to_dict()` 用于报告层和 B8 机器读取。
+- `minimum_group_report_to_markdown()` 生成第 (2) 问人工分析和报告草稿所需的 Markdown 摘要。
+
 完成标准：
 
 - 对每个 `k` 输出：理论下界、最佳候选方案耗时、是否可行、失败原因。

@@ -545,6 +545,44 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 5. 若存在完成时间不超过 24 小时的合法方案，则该 `k` 可行。
 6. 若没有可行方案但下界未排除，应标记为“需要 A 线继续搜索或需要更强下界”，不能直接宣称该 `k` 不可能。
 
+### 已拍板决策
+
+1. B5 本体走 `b/minimum-group-decision` 分支；只有新增跨线候选池契约时才切到 `shared/...` 分支。
+2. B5 模块放在 `mm_final.evaluation.minimum_group_count`，不放在 `mm_final.routing` 或 `mm_final.contracts` 中。
+3. B5 输出结构命名为 `MinimumGroupReport`、`GroupDecisionRecord` 和 `CandidateDecisionRecord` 或等价数据类，提供 `to_dict()` 和 Markdown 摘要 helper。
+4. B5 第一版不修改 `RoutePlan`、`AuditResult` 或下界数据结构契约；B5 结论是方案外判定材料。
+5. B5 核心入口接收 `candidate_plans_by_k: Mapping[int, Iterable[RoutePlan]]`；`SolutionPool` 只通过 adapter/helper 转换为 `RoutePlan` 后进入 B5。
+6. B5 第一版不定义新的 candidate-pool JSON envelope，只加载多个 `RoutePlan` JSON 并按 `k` 归组；该 envelope 不是后续必做项，可以长期不做。只有当多算法、多目录、跨进程或 GUI 批量交换需要统一元数据时，才走 `shared/...` 讨论候选池文件契约。
+7. 候选组数范围由调用方显式传入 `k_values`，B5 可提供默认范围 helper，但核心函数不只扫候选池中出现的 `k`。
+8. B5 对所有给定 `k` 都生成判定记录，`minimum_feasible_k` 取最小可行组数；不因遇到第一个可行方案就停止记录。
+9. 参数通过 `MinimumGroupParameters` 或等价结构显式传入，并统一派生 B3 `EvaluationParameters` 与 B4 `LowerBoundParameters`；若候选 `RoutePlan.parameters` 与统一参数不一致，只记录 warning，不改变本批判定口径。
+10. B5 可接收已有 `LowerBoundReport`，没有则内部调用 B4；若传入报告未覆盖所有 `k_values`，应返回错误或诊断。
+11. B4 状态映射为：`lower_bound_impossible` 直接强排除；`not_excluded` 和 `insufficient_evidence` 继续审计候选池。
+12. B5 只使用 B3 `final` 模式作为候选进入正式结论的审计门禁。
+13. 候选可行条件为：B3 的 `schema_valid`、`coverage_valid`、`route_valid`、`metric_valid` 全为真，`recomputed_metrics` 存在，`group_count == k`，且 `is_within_time_limit=True`。
+14. 若候选路线条数不等于当前 `k`，记录 `candidate_group_count_mismatch`，该候选不可作为该 `k` 的上界；不自动挪到别的 `k`。
+15. 每个 `k` 的状态使用结构化枚举：`lower_bound_impossible`、`candidate_feasible`、`candidate_not_found`、`candidate_invalid`、`insufficient_evidence`。
+16. 最少组数结论等级区分 `proven_minimum`、`incumbent_minimum` 和 `no_feasible_candidate`；若更小 `k` 未被下界强排除，只能说当前候选最小，不能说数学最少。
+17. “最佳路线”排序先过滤 final-valid 且 24 小时内候选，再按 `completion_time_hour`、`total_distance_km`、`time_range_hour`、`distance_range_km`、`plan_id` 排序。
+18. 只有最佳合法且 24 小时内候选形成 feasible upper bound；最佳合法但超时的候选只记录为 observed candidate time，不构成可行上界。
+19. 每个 `k` 记录 `lower_bound_hour`、`best_candidate_time_hour` 和 `gap_hour`；不可得字段用 `null` 或等价空值表示。
+20. A 线搜索完成声明第一版只作为 `search_complete` 元信息记录，不作为数学证明，也不能据此排除未被下界强排除的 `k`。
+21. 重复 `plan_id` 记录 warning，仍逐个审计，内部使用稳定序号区分候选记录。
+22. B5 核心只接已解析 `RoutePlan`；文件 helper 负责把解析失败的 JSON 转成 invalid 的 `CandidateDecisionRecord`。
+23. B5 第一版不使用 B2/共享 `score_candidate()` 预筛，所有候选都走 B3 final。若候选池规模很大，可增加可选预筛层，但预筛只能用来排序、分批或截取进入终审的候选，不能替代 B3 final，也不能直接形成可行性或最少组数结论。
+24. B5 输出结构化 `MinimumGroupReport` 和 Markdown 摘要。
+25. B5 测试使用小图手算，覆盖下界排除、候选可行、候选超时、候选非法、缺候选和正式路网 smoke；不等待 A 线结果。
+26. `MinimumGroupReport` 只引用最佳候选的 `plan_id` 和 `AuditResult`，不复制完整 `RoutePlan`；完整路线仍由原始 `RoutePlan` 文件或对象承载。
+27. B5 第一版完成标准为：能对给定 `k_values` 和候选池输出每个 `k` 的判定、最小候选可行 `k`、结论等级、上下界差距和 Markdown 摘要；不要求证明数学最少组数，也不生成路线。
+
+### 当前落地接口
+
+- `mm_final.evaluation.minimum_group_count` 提供 `MinimumGroupParameters`、`CandidateDecisionRecord`、`GroupDecisionRecord`、`MinimumGroupReport`、`decide_minimum_group_count()`、`decide_minimum_group_count_json_files()`、`default_minimum_group_k_values()` 和 `minimum_group_report_to_markdown()`。
+- `decide_minimum_group_count(road_network, k_values=..., candidate_plans_by_k=..., parameters=...)` 是 B5 核心入口，只接已解析的 `RoutePlan`。
+- `decide_minimum_group_count_json_files(...)` 是文件 helper，接收按 `k` 归组的 RoutePlan JSON 路径；解析失败的文件会进入 invalid `CandidateDecisionRecord`，不污染核心入口。
+- `MinimumGroupReport.conclusion_status` 使用 `proven_minimum`、`incumbent_minimum` 或 `no_feasible_candidate`；只有所有更小正整数 `k` 都被下界强排除时，才输出 `proven_minimum`。
+- `GroupDecisionRecord.best_candidate_time_hour` 表示当前 `k` 下已通过 final 审计且组数匹配的最佳观测候选耗时；`feasible_upper_bound_hour` 只有该候选同时满足 24 小时时才存在。
+
 ### 继承 B4 的待接事项
 
 - 读取 B4 的 `LowerBoundReport`，将每个 `k` 的 `lower_bound_impossible`、`not_excluded`、`insufficient_evidence` 状态纳入最少组数判定记录。
