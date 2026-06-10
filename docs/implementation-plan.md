@@ -312,6 +312,22 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 固定组数下最大可服务量下界；
 - 由 `O` 到远端节点的往返距离造成的瓶颈下界。
 
+已确认口径：
+
+- B4 本体走 `b/lower-bound-analysis` 分支，模块放在 `mm_final.evaluation.lower_bounds`。
+- B4 输出结构化 `LowerBoundReport` 和 Markdown 摘要，不修改 `RoutePlan`、`AuditResult` 或 `PlanMetrics` 契约。
+- B4 第一版只做可解释下界：总停留时间容量下界、单点往返下界和简单集合负载下界。
+- B4 不读取 A 线候选方案池，不依赖 B3 审计结果，不直接输出最少组数或第 (3) 问最终结论。
+- 不可能性状态使用 `lower_bound_impossible`、`not_excluded`、`insufficient_evidence`；只有严格数学成立的下界才能用于强排除。
+- 每个下界条目需要标注强弱类型，例如 `strict/provable`、`screening_only` 或 `heuristic`。
+
+已落地接口：
+
+- 核心入口为 `compute_lower_bound_report(road_network, k_values=..., parameters=...)`，并提供 `default_k_values()` 生成默认扫描范围。
+- 输出数据类包括 `LowerBoundParameters`、`LowerBoundEntry`、`GroupLowerBound` 和 `LowerBoundReport`，其中 `LowerBoundReport.to_dict()` 用于 B5/B6 机器读取。
+- `lower_bound_report_to_markdown()` 生成面向人工分析和报告草稿的 Markdown 摘要。
+- `GroupLowerBound.status` 只由 `strict/provable` 证据决定；`screening_only` 证据只能进入说明，不能直接排除组数。
+
 完成标准：
 
 - 能说明某些组数为什么不可能满足 24 小时。
@@ -330,6 +346,7 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 对每个 `k` 输出：理论下界、最佳候选方案耗时、是否可行、失败原因。
 - 当某个 `k` 可行时，能说明更小组数为何不采用。
 - 输出最少组数下的推荐路线。
+- 继承 B4 留后的候选方案池对比、上下界差距计算和最少组数状态合成；不得把 B4 的筛查性弱下界直接当作强排除结论。
 
 ### 阶段 B6：人员足够时的最短完成时间
 
@@ -350,6 +367,7 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 给出最短完成时间候选值。
 - 给出达到该时间的路线方案。
 - 给出下界解释，说明该值为什么可信。
+- 继承 B4 留后的无限人手完成时间下界，并结合 A 线或手工候选路线形成上下界差距；只有上下界合拢时才宣称强最优结论。
 
 ### 阶段 B7：参数敏感性分析
 

@@ -474,6 +474,39 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 - 对固定 `k`，若某些远端或高停留负载节点集合无论如何都无法塞入 `k` 条路线的时间容量，应给出集合级下界。
 - 初期可以先做可解释的简单集合下界，不急于做复杂证明。
 
+### 已拍板决策
+
+1. B4 本体走 `b/lower-bound-analysis` 分支；只有新增公共数据结构或共享契约字段时才切到 `shared/...` 分支。
+2. B4 模块放在 `mm_final.evaluation.lower_bounds`，不放在 `mm_final.routing` 或 `mm_final.contracts` 中。
+3. B4 输出结构命名为 `LowerBoundReport` 或等价数据类，提供 `to_dict()` 和 Markdown 摘要 helper，便于 B5/B6 机器读取和报告引用。
+4. B4 第一版不修改 `RoutePlan`、`AuditResult` 或 `PlanMetrics` 契约；下界报告是方案外的证明材料。
+5. B4 只计算下界和不可能性证据；B5 负责把下界、A 线候选方案池和 B3 审计结果合成为最少组数判定。
+6. 候选组数范围由调用方显式传入 `k_values`；B4 可提供默认范围 helper，但不在核心函数中自动猜测扫描范围。
+7. 参数通过 `LowerBoundParameters` 或等价结构显式传入，默认题面参数为 `T_hour=2.0`、`t_hour=1.0`、`speed_km_per_hour=35.0`、`time_limit_hour=24.0`。
+8. B4 第一版下界组合为：总停留时间容量下界、单点往返下界和简单集合负载下界。
+9. 总停留时间容量下界使用 `ceil(total_stop_time / H)` 给出最少组数弱下界；不加入未经证明的估计行驶时间。
+10. 单点往返下界使用 `2 * dist(O, node) / v + stop_time(node)`；不得用 A 线候选路线距离替代该下界。
+11. 固定 `k` 的完成时间下界第一版以 `max(total_stop_time / k, max_single_node_round_trip)` 为基线；若集合负载下界被标注为 `strict/provable`，也可纳入该 `k` 的强排除计算。
+12. 简单集合负载下界第一版只覆盖可解释的小集合，例如远端节点 Top-N、乡镇集合、村集合和按 depot 距离分层集合；不枚举所有子集。
+13. 只有严格数学成立的集合下界才能用于标记某个 `k` 为不可能；启发式或经验性集合分析只能作为解释或筛查，不能作为强排除依据。
+14. 不可能性状态使用结构化命名：`lower_bound_impossible`、`not_excluded`、`insufficient_evidence`。
+15. B4 第一版不读取 A 线候选方案池；候选方案池与上界差距对比留给 B5。
+16. B4 第一版不依赖 B3 审计结果；下界可以在没有候选方案时独立计算。
+17. B4 计算通用的无限人手最短完成时间下界，B6 使用该下界回答第 (3) 问，不由 B4 直接给第 (3) 问最终结论。
+18. 内部计算保留 float 原值；下界比较使用小容差，组数下界只对组数做 `ceil`，展示格式留给 Markdown 或报告层。
+19. B4 测试使用小图人工路网、正式路网 smoke 和手算案例；不等待 A 线结果。
+20. B4 输出同时提供结构化 `LowerBoundReport` 和 Markdown 摘要。
+21. 每个下界条目必须标注强弱类型，例如 `strict/provable`、`screening_only` 或 `heuristic`，避免把筛查性弱下界误写成强证明。
+22. B4 第一版完成标准为：能对给定参数和 `k_values` 输出可测试的下界报告，并能标记被严格下界排除的 `k`；不要求证明最终最少组数，也不要求构造路线。
+
+### 当前落地接口
+
+- `mm_final.evaluation.lower_bounds` 提供 `LowerBoundParameters`、`LowerBoundEntry`、`GroupLowerBound`、`LowerBoundReport`、`compute_lower_bound_report()`、`default_k_values()` 和 `lower_bound_report_to_markdown()`。
+- `compute_lower_bound_report(road_network, k_values=..., parameters=...)` 是 B4 核心入口；调用方必须显式给出 `k_values`，参数缺省时使用题面默认值。
+- `LowerBoundReport.group_bounds` 对每个 `k` 输出完成时间下界、状态和触发该下界的证据 code；`LowerBoundReport.bound_entries` 保留可解释证据并标注 `strict/provable` 或 `screening_only`。
+- 当前 `group_bounds` 只使用 `strict/provable` 证据执行强排除；距离分层集合保留为 `screening_only` 报告项，不参与 `lower_bound_impossible` 判定。
+- `unlimited_personnel_lower_bound_hour` 当前取所有必访节点单点往返下界的最大值，供 B6 作为第 (3) 问的通用下界输入。
+
 ### 建议测试
 
 - 总服务时间下界可由已知乡镇数量、村数量直接复核。
@@ -512,6 +545,14 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 5. 若存在完成时间不超过 24 小时的合法方案，则该 `k` 可行。
 6. 若没有可行方案但下界未排除，应标记为“需要 A 线继续搜索或需要更强下界”，不能直接宣称该 `k` 不可能。
 
+### 继承 B4 的待接事项
+
+- 读取 B4 的 `LowerBoundReport`，将每个 `k` 的 `lower_bound_impossible`、`not_excluded`、`insufficient_evidence` 状态纳入最少组数判定记录。
+- 对每个未被下界排除的 `k`，再读取 A 线候选方案池并调用 B3 final 审计；B5 才负责比较候选方案完成时间和 24 小时上限。
+- 计算并报告上下界差距：B4 下界作为 lower bound，A 线最优可行候选作为 upper bound。只有上下界合拢时，才能宣称该组数或完成时间结论具有强证明。
+- 若 B4 只给出 `screening_only` 或 `heuristic` 说明，B5 不得据此排除组数，只能记录为需要更强下界或继续搜索。
+- B4 不读取候选池这一点由 B5 接住；候选池排序、最佳候选选择和失败原因分类都在 B5 完成。
+
 ### 验收标准
 
 - 对每个 `k` 都有明确状态：`lower_bound_impossible`、`candidate_feasible`、`candidate_not_found`。
@@ -537,6 +578,14 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 4. 检查合并近邻节点是否降低最大完成时间，避免机械地每点一组。
 5. 若候选方案完成时间等于下界，形成强结论。
 6. 若候选方案高于下界，记录差距，并说明仍需 A 线或更强分析推进。
+
+### 继承 B4 的待接事项
+
+- 使用 B4 给出的无限人手最短完成时间通用下界，作为第 (3) 问的 lower bound。
+- 接收 A 线或手工构造的候选路线作为 upper bound，并通过 B3 final 审计确认候选路线合法。
+- 判断候选完成时间是否与 B4 下界合拢；若合拢，形成强结论；若未合拢，只能报告当前候选值、下界来源和剩余差距。
+- B4 不直接回答第 (3) 问最终结论这一点由 B6 接住；B6 负责说明最短完成时间下需要多少组、路线结构如何、以及是否仍需更强分析。
+- 若近邻节点合并能降低最大完成时间，B6 负责让 A 线或手工构造候选方案验证，不回退到 B4 做路线搜索。
 
 ### 验收标准
 

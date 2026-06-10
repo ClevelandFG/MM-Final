@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-06-10  沉淀并实现 B4 下界分析
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B4 即将进入组数下界与不可能性分析阶段，需要明确哪些下界第一版要做、哪些证明或候选方案对比留到后续阶段；同时必须避免“B4 现在不做”的内容在 B5/B6 中丢失，并将已拍板口径落到可测试代码中。
+- **解决方案**：
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B4 阶段新增 22 条已拍板决策，确认 B4 走 `b/lower-bound-analysis`，模块为 `mm_final.evaluation.lower_bounds`，输出 `LowerBoundReport` 和 Markdown 摘要。
+  - 确认 B4 第一版只做总停留时间容量下界、单点往返下界和简单集合负载下界；不做复杂整数规划证明，不读取 A 线候选方案池，不直接输出最少组数或第 (3) 问最终结论。
+  - 明确不可能性状态使用 `lower_bound_impossible`、`not_excluded`、`insufficient_evidence`，并要求每个下界条目标注 `strict/provable`、`screening_only` 或 `heuristic`。
+  - 新增 `mm_final.evaluation.lower_bounds`，实现 `LowerBoundParameters`、`LowerBoundEntry`、`GroupLowerBound`、`LowerBoundReport`、`compute_lower_bound_report()`、`default_k_values()` 和 `lower_bound_report_to_markdown()`。
+  - `GroupLowerBound.status` 只由 `strict/provable` 证据决定；距离分层集合当前作为 `screening_only` 说明项进入 Markdown，不参与强排除。
+  - 新增 B4 单测，覆盖小图手算、严格下界排除、`to_dict()`、Markdown 摘要和正式路网 smoke。
+  - 在 B5 阶段补充继承事项：读取 B4 下界报告、组合 A 线候选方案池和 B3 final 审计、计算上下界差距，并禁止把筛查性弱下界当作强排除依据。
+  - 在 B6 阶段补充继承事项：使用 B4 无限人手完成时间下界，结合候选路线形成上下界差距；只有上下界合拢时才宣称强最优结论。
+  - 在 `docs/context.md` 补充下界、强排除和上下界差距术语。
+- **影响文件**：`src/mm_final/evaluation/lower_bounds.py`、`src/mm_final/evaluation/__init__.py`、`tests/test_lower_bounds.py`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/context.md`、`docs/changes.md`。
+
 ## 2026-06-09  实现 B3 可行性审计器
 
 - **版本号**：未发布，仍处于第一个可行版本前。
