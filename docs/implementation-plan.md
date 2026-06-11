@@ -413,6 +413,7 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 
 - 主攻第 (4) 问。
 - 固定组数时，讨论 `T`、`t`、`v` 的变化对最佳路线的影响。
+- 第一版做成参数情景审计与敏感性报告层：对给定代表性 `RoutePlan` 候选在不同参数情景下统一重算、B3 final 审计、排序和解释，不承担 A 线路线重优化职责。
 
 分析内容：
 
@@ -422,6 +423,28 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 路线合并、拆分、换点的临界条件；
 - 固定 3 组与其他组数下的对比。
 - 继承 B6 留后的参数化最短时间分析能力，扫描 `T`、`t`、`v` 对第 (3) 问最短完成时间值、瓶颈节点和单点一组基线结构的影响。
+
+已确认口径：
+
+- B7 本体走 `b/parameter-sensitivity-analysis` 分支，模块放在 `mm_final.evaluation.parameter_sensitivity`。
+- B7 输出 `SensitivityReport`、`ParameterScenario` 和 `ScenarioEvaluationRecord` 或等价结构，并提供 `to_dict()`、Markdown 摘要和表格行 helper。
+- B7 第一版不修改 `RoutePlan`、`AuditResult` 或 B4/B5/B6 既有结构；参数敏感性结论是方案外分析材料。
+- B7 核心输入为 `candidate_plans: Iterable[RoutePlan]` 与显式 `ParameterScenario` 列表；文件 helper 可加载多个 RoutePlan JSON 和情景配置，但不定义新的 sensitivity-pool JSON envelope。
+- 默认基准参数采用 `T=2h`、`t=1h`、`v=35km/h`；默认代表性情景以单因素扰动为主，例如 `T={1.5,2.0,2.5}`、`t={0.5,1.0,1.5}`、`v={25,35,45}`，第一版不做三维密集全扫。
+- B7 每个情景都按显式参数调用 B3 final 终审并重算指标；24 小时上限默认只作为展示字段，不作为敏感性比较的硬门槛。
+- 每个情景下的推荐候选先按完成时间排序，再按总路程、耗时极差、路程极差和 `plan_id` 排序。
+- B7 记录相对基准的完成时间变化、总路程变化、瓶颈路线变化、停留/行驶占比变化和候选排名变化。
+- B7 的路线结构变化判断只作为 `screening_only` 重优化提示，不能直接作为全局最优或不可能性的数学证明。
+- 情景结论应区分候选池内最优、需要重优化、由 B5/B6 证明和无合法候选等状态，避免把启发式候选值写成强最优结论。
+- B7 可选复用 B5 重新判断参数情景下的 24 小时最少组数，可选复用 B6 生成无限人手最短完成时间摘要；这些证明摘要不替代 B7 的固定候选敏感性分析。
+- B7 输出可画图的表格数据，实际图表、路线高亮、动态展示和 GUI 参数交互留给 B8。
+
+已落地接口：
+
+- `mm_final.evaluation.parameter_sensitivity` 提供参数情景、情景候选记录、情景摘要和敏感性报告结构。
+- `analyze_parameter_sensitivity()` 对已解析 `RoutePlan` 候选做核心情景分析；`analyze_parameter_sensitivity_json_files()` 处理文件级候选和解析失败记录。
+- `default_parameter_scenarios()` 和 `load_parameter_scenarios_json()` 分别支持默认代表性情景和独立情景配置。
+- `SensitivityReport.to_dict()`、`SensitivityReport.to_table_rows()` 和 `sensitivity_report_to_markdown()` 分别服务机器读取、B8 图表数据和人工报告草稿。
 
 完成标准：
 

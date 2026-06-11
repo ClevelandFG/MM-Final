@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-06-11  沉淀并实现 B7 参数敏感性分析
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B7 即将回答第 (4) 问，需要明确它是参数情景审计与敏感性报告层，而不是 A 线重优化器；同时需要沉淀固定候选路线、参数情景、B3 final 审计、B5/B6 证明摘要、重优化提示和 B8 图表交接的边界，并将该口径落到可测试代码中。
+- **解决方案**：
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B7 阶段新增 34 条已拍板决策，确认 B7 走 `b/parameter-sensitivity-analysis`，模块为 `mm_final.evaluation.parameter_sensitivity`。
+  - 确认 B7 输出 `SensitivityReport`、`ParameterScenario` 和 `ScenarioEvaluationRecord` 或等价结构，并提供 `to_dict()`、Markdown 摘要和表格行 helper。
+  - 确认 B7 第一版不修改 `RoutePlan`、`AuditResult` 或 B4/B5/B6 既有结构，不定义新的 sensitivity-pool JSON envelope。
+  - 确认 B7 核心接收显式参数情景和已解析 `RoutePlan` 候选，每个情景都按显式参数调用 B3 final 审计并重算指标，不信任候选原始 metrics。
+  - 确认默认基准参数为 `T=2h`、`t=1h`、`v=35km/h`，默认代表性情景以单因素扰动为主，第一版不做三维密集全扫。
+  - 明确 B7 不做路线重优化，只输出同路线敏感性、瓶颈变化、停留/行驶分解、候选排名变化和 `screening_only` 重优化提示；真正重优化由 A 线负责。
+  - 明确 B7 可选复用 B5 判断参数情景下的 24 小时最少组数，可选复用 B6 输出无限人手最短时间摘要；只有这些严格证明或上下界合拢时才给强结论。
+  - 明确 B7 输出可画图数据，实际图表、路线高亮、动态展示和 GUI 参数交互留给 B8。
+  - 新增 `mm_final.evaluation.parameter_sensitivity`，实现 `ParameterScenario`、`RouteComponentBreakdown`、`ScenarioEvaluationRecord`、`ScenarioSummary`、`SensitivityReport`、`default_parameter_scenarios()`、`load_parameter_scenarios_json()`、`analyze_parameter_sensitivity()`、`analyze_parameter_sensitivity_json_files()` 和 `sensitivity_report_to_markdown()`。
+  - B7 核心对每个情景调用 B3 final 审计，记录情景内候选排名、相对基准 delta、瓶颈路线变化、路线级停留/行驶分解、重优化原因、默认 B6 无限人手摘要和可选 B5 最少组数证明摘要。
+  - 新增 B7 单测，覆盖参数扰动、候选赢家变化、瓶颈切换、路线分解、非法候选、参数不一致、JSON 解析失败、独立情景配置、B6 摘要、可选 B5 证明、`to_dict()`、Markdown、表格行和正式路网 smoke。
+  - 在 `docs/context.md` 补充参数情景、同路线敏感性和重优化提示术语。
+- **影响文件**：`src/mm_final/evaluation/parameter_sensitivity.py`、`src/mm_final/evaluation/__init__.py`、`tests/test_parameter_sensitivity.py`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/context.md`、`docs/changes.md`。
+
 ## 2026-06-10  沉淀并实现 B6 人员足够最短完成时间
 
 - **版本号**：未发布，仍处于第一个可行版本前。

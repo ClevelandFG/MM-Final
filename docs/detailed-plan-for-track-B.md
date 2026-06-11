@@ -682,6 +682,8 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 
 主攻第 (4) 问：固定组数时，分析 `T`、`t`、`v` 改变对最佳巡视路线的影响。
 
+B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A 线重优化器。它对给定的一批代表性 `RoutePlan` 候选，在不同参数情景下统一重算、终审、排序和解释，回答完成时间、瓶颈路线、停留/行驶占比和路线结构重构需求如何变化。若要宣称某个参数情景下的全局最优，必须接入 B5/B6 或 A 线额外候选形成证明，B7 本身不把候选池最优偷换成数学最优。
+
 ### 输入
 
 - 固定组数，默认优先分析 3 组。
@@ -707,6 +709,59 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 - 当 `v` 很低时，行驶距离主导，分组更应重视空间邻近性。
 - 当 `T` 增大时，乡镇节点集中的路线更可能成为瓶颈。
 - 当 `t` 增大时，村节点数量多的路线更可能成为瓶颈。
+
+### 已拍板决策
+
+1. B7 本体走 `b/parameter-sensitivity-analysis` 分支；只有新增共享参数契约或跨线文件 envelope 时才切到 `shared/...` 分支。
+2. B7 模块放在 `mm_final.evaluation.parameter_sensitivity`，不放在 `mm_final.routing` 或 `mm_final.contracts` 中。
+3. B7 输出结构命名为 `SensitivityReport`、`ParameterScenario` 和 `ScenarioEvaluationRecord` 或等价数据类，提供 `to_dict()`、Markdown 摘要和表格行 helper。
+4. B7 第一版不修改 `RoutePlan`、`AuditResult`、B4、B5 或 B6 的既有契约结构；参数敏感性结论是方案外分析材料。
+5. B7 核心入口接收 `candidate_plans: Iterable[RoutePlan]` 和显式 `ParameterScenario` 列表；A 线 `SolutionPool` 和文件目录只通过 adapter/helper 转换后进入核心。
+6. 文件 helper 第一版加载多个 `RoutePlan` JSON 和独立情景配置，不定义新的 sensitivity-pool JSON envelope。
+7. B7 不做路线重优化，只评估固定候选路线结构，并在报告中标记 `requires_reoptimization` 或等价重优化提示。
+8. A/B 握手方式为：A 线在关键参数情景下补充或重构候选路线，B7 负责审计、比较和解释；B7 不反向承担 A 线搜索职责。
+9. 参数情景由调用方显式传入，B7 可提供默认代表性情景 helper，但核心函数不隐式密集扫描全空间。
+10. 默认基准参数使用题面口径：`T_hour=2.0`、`t_hour=1.0`、`speed_km_per_hour=35.0`。
+11. 默认代表性情景以单因素扰动为主，例如 `T={1.5,2.0,2.5}`、`t={0.5,1.0,1.5}`、`v={25,35,45}`，并可额外加入少量组合情景；第一版不做三维笛卡尔密集全扫。
+12. 固定组数分析默认优先 3 组，同时允许候选包含其他组数并分组展示，不强制丢弃非 3 组候选。
+13. 每个候选在每个参数情景下都调用 B3 `final` 审计，并通过显式参数重算指标；B7 不信任候选原始 metrics。
+14. 24 小时上限在 B7 中默认作为展示和状态字段，不作为参数敏感性候选合法性的硬门槛；若要重新判断 24 小时最少组数，应交给 B5。
+15. 候选进入正式比较的条件为：B3 final 的 `schema_valid`、`coverage_valid`、`route_valid`、`metric_valid` 全为真，且存在复算指标；warning 不必自动剔除。
+16. 每个情景下的推荐候选排序先按 `completion_time_hour`，再按 `total_distance_km`、`time_range_hour`、`distance_range_km` 和 `plan_id`。
+17. 内部计算保留 float 原值，排序、delta 和等值判断使用小容差；报告展示阶段再格式化。
+18. 敏感性指标至少记录相对基准情景的完成时间变化、总路程变化、瓶颈路线变化、停留/行驶占比变化和候选排名变化。
+19. 瓶颈分析复用 B2/B3 复算得到的 route metrics、`bottleneck_route_ids` 和路线级耗时分解，不在 B7 中另起一套耗时口径。
+20. 停留/行驶分解按路线记录 travel time、town stop time、village stop time 及其占比，用于解释 `T`、`t`、`v` 的影响来源。
+21. 路线结构变化判断只作为 `screening_only` 信号，例如候选赢家变化、瓶颈路线切换、完成时间增幅过大或耗时均衡明显恶化；不得作为全局最优或不可能性的数学证明。
+22. 默认重优化提示阈值为：相对基准完成时间增幅超过 10%、`time_range_hour` 超过 1 小时、瓶颈路线切换或情景赢家变化；阈值应可配置。
+23. 情景结论等级区分 `best_in_pool`、`needs_reoptimization`、`proven_by_b5_or_b6` 和 `no_valid_candidate` 或等价状态，明确候选池最优不等于数学最优。
+24. B7 可选复用 B5，用于某些参数情景下重新判断 24 小时最少组数；这不是 B7 核心路径。
+25. B7 应复用 B6 参数化最短时间分析能力，给出每个情景下无限人手最短完成时间、瓶颈节点和单点一组基线变化摘要。
+26. B7 可选调用 B4/B6 展示 lower/upper gap；没有证明时只展示候选池观测结果，不硬写强最优。
+27. 第一版不使用 B2/共享 `score_candidate()` 预筛，所有候选全量审计；候选池很大时可后续增加只影响审计顺序和批量的 Top-N 预筛。
+28. 重复 `plan_id` 记录 warning，内部使用稳定序号区分记录，不直接阻断情景审计。
+29. 若候选 `RoutePlan.parameters` 与当前 `ParameterScenario` 不一致，按情景参数重算并记录 warning。
+30. B7 核心只接已解析 `RoutePlan`；文件 helper 负责把解析失败的 JSON 转成 invalid scenario record。
+31. B7 输出结构化 `SensitivityReport`、Markdown 摘要和表格行数据；CSV、图片和交互图表导出留给 B8 或报告层。
+32. B7 只输出可画图数据，不直接承担图表和 GUI；B8 负责路线图、指标图、动态展示和交互展示。
+33. B7 测试使用小图手算，覆盖参数扰动、瓶颈切换、候选排名变化、非法候选、Markdown 和表格行输出；再加正式路网 smoke，不等待 A 线最终结果。
+34. B7 第一版完成标准为：能对候选池和参数情景输出每情景审计排名、敏感性 delta、瓶颈变化、停留/行驶分解、重优化提示、可选 B5/B6 证明摘要和 Markdown；不要求完成全局重优化、GUI 或图表绘制。
+
+### 继承 B6 与交给 B8 的事项
+
+- 继承 B6 的参数化最短时间分析：对每个 `ParameterScenario`，可复用 B6 生成无限人手最短完成时间、瓶颈节点和单点一组基线摘要。
+- 继承 B5/B6 的强结论口径：只有 B5/B6 或其他严格上下界证明支撑时，B7 才能把某个情景标记为 `proven_by_b5_or_b6`；否则只能说是候选池内最优或需要重优化。
+- 交给 A 线的事项：当 B7 标记某情景需要重优化时，由 A 线在该情景下重新生成或调整候选路线。
+- 交给 B8 的事项：B7 输出表格行和绘图数据，B8 负责实际图表、路线高亮、动态展示和 GUI 参数交互。
+
+### 当前落地接口
+
+- `mm_final.evaluation.parameter_sensitivity` 提供 `ParameterScenario`、`RouteComponentBreakdown`、`ScenarioEvaluationRecord`、`ScenarioSummary` 和 `SensitivityReport`。
+- `default_parameter_scenarios()` 生成第一版单因素扰动代表性情景；`load_parameter_scenarios_json()` 从独立 JSON 配置读取参数情景。
+- `analyze_parameter_sensitivity(road_network, candidate_plans=..., scenarios=...)` 是 B7 核心入口，只接已解析的 `RoutePlan` 候选和显式情景列表。
+- `analyze_parameter_sensitivity_json_files(...)` 是文件 helper，加载多个 RoutePlan JSON；解析失败会进入 `parse_failed` 情景记录，不污染核心入口。
+- `SensitivityReport.to_dict()` 和 `SensitivityReport.to_table_rows()` 分别服务机器读取和 B8/报告层画图；`sensitivity_report_to_markdown()` 生成第 (4) 问人工分析摘要。
+- B7 每个情景均使用 B3 final 审计并重算指标，记录候选排名、相对基准 delta、瓶颈路线、路线级停留/行驶分解、重优化提示、可选 B5 最少组数证明摘要和默认 B6 无限人手最短时间摘要。
 
 ### 验收标准
 
