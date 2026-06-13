@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-06-14  优化 B8c GUI 标题与播放连续性
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B8c GUI 标题仍包含阶段号；播放动画时，Matplotlib 重绘耗时被计入下一次模型时间推进，导致队伍在短边或重绘较慢时看起来像从一个端点瞬移到另一个端点。
+- **解决方案**：
+  - 将窗口标题从 `B8c Road Problem Solver` 改为 `Road Problem Solver`。
+  - 将 GUI 播放计时改为重绘后重新计时，并提高播放 timer 刷新频率，减少单帧跨越多个道路边段的情况。
+  - 保持时间轴的边段速度口径：边权 `W`、车速 `v` 时，边段耗时为 `W / v`；渲染坐标沿布局线段按比例插值，因此地图上的移动速度为 `v * d / W`。
+  - 补充测试验证地图速度公式，避免后续把布局距离和道路边权口径混淆。
+- **影响文件**：`apps/gui/route_animation_gui.py`、`tests/test_route_animation_gui.py`、`tests/test_route_animation_visualization.py`、`docs/changes.md`。
+
+---
+
 ## 2026-06-14  修复 B8c GUI 地图自适应显示
 
 - **版本号**：未发布，仍处于第一个可行版本前。

@@ -96,6 +96,24 @@ def test_route_animation_timeline_interpolates_travel_stop_and_completion():
     assert finished.current_node == "O"
 
 
+def test_route_animation_map_speed_uses_layout_distance_over_edge_weight():
+    timeline = RouteAnimationTimeline.from_route_plan(make_plan(), make_network(), make_parameters())
+    layout = make_layout()
+    first_edge = timeline.segments_by_route_id["R1"][0]
+    source = layout.require_node(first_edge.source)
+    target = layout.require_node(first_edge.target)
+    layout_distance = ((target.x - source.x) ** 2 + (target.y - source.y) ** 2) ** 0.5
+    expected_map_speed = make_parameters().speed_km_per_hour * layout_distance / first_edge.distance_km
+
+    start = timeline.state_at(0.25).team_states[0]
+    end = timeline.state_at(0.75).team_states[0]
+    observed_map_distance = (end.edge_progress - start.edge_progress) * layout_distance
+
+    assert start.edge == ("O", "A")
+    assert end.edge == ("O", "A")
+    assert observed_map_distance / 0.5 == pytest.approx(expected_map_speed)
+
+
 def test_build_bundle_rejects_old_contract_path_in_formal_mode():
     plan = make_plan(expanded_node_path=["O", "U01", "A", "1", "O"])
 

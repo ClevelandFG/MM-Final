@@ -142,7 +142,7 @@ class RouteAnimationWindow(QMainWindow):
 
     def __init__(self, route_plan_path: Optional[Path] = None):
         super().__init__()
-        self.setWindowTitle("B8c Road Problem Solver")
+        self.setWindowTitle("Road Problem Solver")
         self.resize(1380, 900)
 
         self.bundle: Optional[RouteAnimationBundle] = None
@@ -164,7 +164,7 @@ class RouteAnimationWindow(QMainWindow):
 
         self._build_ui()
         self.timer = QTimer(self)
-        self.timer.setInterval(150)
+        self.timer.setInterval(30)
         self.timer.timeout.connect(self._advance_playback)
 
         if route_plan_path is not None:
@@ -382,9 +382,9 @@ class RouteAnimationWindow(QMainWindow):
             return
         now = time.monotonic()
         elapsed_second = now - self._last_tick
-        self._last_tick = now
         speed = float(self.speed_spin.value())
         self.set_time_hour(self.current_time_hour + elapsed_second * self.playback_model_hours_per_second * speed)
+        self._last_tick = time.monotonic()
         if self.current_time_hour >= self.bundle.timeline.completion_time_hour:
             self.timer.stop()
             self.play_button.setText("播放")

@@ -54,7 +54,7 @@ def test_route_animation_gui_loads_scrubs_renders_and_toggles_routes(qt_app):
 def test_b8c_problem_solver_tabs_build_solve_job(qt_app):
     window = RouteAnimationWindow()
     try:
-        assert window.windowTitle() == "B8c Road Problem Solver"
+        assert window.windowTitle() == "Road Problem Solver"
         assert window.problem_tabs.count() == 4
         assert set(window.problem_controls) == {"fixed_groups", "minimum_groups", "unlimited_personnel"}
 
