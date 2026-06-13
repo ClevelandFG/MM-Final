@@ -18,7 +18,7 @@ TOWN_NODES = tuple(
     node for node in (chr(code) for code in range(ord("A"), ord("R") + 1)) if node != DEPOT
 )
 VILLAGE_NODES = tuple(str(index) for index in range(1, 36))
-AUXILIARY_NODES = tuple(f"U{index:02d}" for index in range(1, 6))
+AUXILIARY_NODES = tuple(f"U{index}" for index in range(1, 7))
 REQUIRED_VISIT_NODES = frozenset(TOWN_NODES + VILLAGE_NODES)
 ALL_KNOWN_NODES = frozenset((DEPOT,) + TOWN_NODES + VILLAGE_NODES + AUXILIARY_NODES)
 

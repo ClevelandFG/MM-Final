@@ -11,7 +11,7 @@
 
 ## 0. 项目目标理解
 
-本项目要在题面给出的县域道路网络上，为从节点 `O` 出发并返回 `O` 的多组巡视任务设计路线。必须巡视节点包括乡（镇）节点 `A`–`R` 与村节点 `1`–`35`，辅助道路节点 `U01`–`U05` 只承担道路连接作用。
+本项目要在题面给出的县域道路网络上，为从节点 `O` 出发并返回 `O` 的多组巡视任务设计路线。必须巡视节点包括乡（镇）节点 `A`–`R` 与村节点 `1`–`35`，辅助道路节点 `U1`–`U6` 只承担道路连接作用。
 
 四个原始问题可统一抽象为带节点服务时间的多路线巡视问题：
 
@@ -50,7 +50,7 @@ A 线使用这些能力来生成方案；B 线使用这些能力来审计方案�
 
 `shared/road-network-core` 中由 B 线推进并落地的路网标准，是 A/B 两线后续共同遵守的最终统一标准。该标准包括：
 
-- 节点语义：`O` 是县政府所在地和 depot，不属于乡镇；`A`–`R` 中除 `O` 外的大写字母是乡镇；`1`–`35` 是村；`U01`–`U05` 是辅助道路节点。
+- 节点语义：`O` 是县政府所在地和 depot，不属于乡镇；`A`–`R` 中除 `O` 外的大写字母是乡镇；`1`–`35` 是村；`U1`–`U6` 是辅助道路节点。
 - 节点分类：统一使用 `mm_final.network.nodes.NodeType` 和 `classify_node`。
 - 路网读取：统一从 `data/raw/road_network.tsv` 读取，测试和扩展场景可传入自定义 TSV 路径。
 - 图结构：统一使用 `mm_final.network.RoadNetwork` 包装无向加权图；外部如需 NetworkX 图，只通过 `to_networkx()` 获取副本。
@@ -85,7 +85,7 @@ A/B 两线并行开发时，采用“稳定 `main` + 短生命周期功能分支
 
 ### 1.5 环境与依赖策略
 
-项目采用 `pyproject.toml` 作为 Python 项目元数据、依赖声明和工具配置入口，采用 uv 管理虚拟环境同步和锁文件。核心依赖优先考虑 `networkx`、`numpy`、`scipy`；可视化采用 Matplotlib + NetworkX + Pillow/ImageIO + Plotly；GUI 第一阶段不启动，后续轻量展示优先评估 Streamlit；动态展示第一阶段优先支持静态图 + GIF。
+项目采用 `pyproject.toml` 作为 Python 项目元数据、依赖声明和工具配置入口，采用 uv 管理虚拟环境同步和锁文件。核心依赖优先考虑 `networkx`、`numpy`、`scipy`；可视化采用 Matplotlib + NetworkX + Pillow/ImageIO + Plotly；B8 第一版先做路线动画时间轴、静态图、GIF、无声 MP4 和导出后端，再做轻量 GUI 播放器；无声 MP4 采用 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线，GUI 框架依赖继续单独拍板。
 
 版本库提交 `pyproject.toml`、`uv.lock` 和环境创建说明，不提交 `.venv`。其他开发者拉取仓库后应通过 uv 基于锁文件重建本机虚拟环境，从而获得一致的依赖版本；`.venv` 本体具有机器相关性，不作为可复现来源。
 
@@ -457,14 +457,55 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 
 目标：
 
-- 在结果契约和评价审计口径稳定后，负责报告图、路线过程动态展示、GIF/无声视频导出和后续轻量 GUI。
-- GUI 只负责参数输入、求解触发、路线展示、图表展示和结果导出，不承载核心数学逻辑。
+- 在结果契约和评价审计口径稳定后，负责报告图、路线过程动态展示、GIF/无声视频导出和轻量 GUI。
+- 第一版先建立可复用的路线动画时间轴和渲染导出核心，再用 GUI 播放器复用同一套时间轴。
+- GUI 只负责文件加载、参数输入、求解触发、路线播放、图表展示和结果导出，不承载核心数学逻辑。
+
+已确认口径：
+
+- B8 先走 `shared/viz-dependencies` 增加可视化可选依赖，再走 `b/route-animation-visualization` 实现动画与 GUI；不得直接在 `main` 上实现。
+- B8 拆成 B8a 和 B8b：B8a 做 `mm_final.visualization` 中的时间轴模型、任意时刻快照、帧渲染、GIF/视频导出、报告图、表格和 README 导出；B8b 做 `apps/` 下的 GUI 播放器。
+- B8a 新增 `RouteAnimationTimeline` 或等价结构，提供 `state_at(time_hour)`；时间轴内部使用模型小时，默认播放比例为真实播放 1 秒代表模型时间 1 小时。
+- 动态展示按 B2/B3 复算的 `expanded_node_path` 推进：所有队伍从 `O` 出发，沿边按距离和速度线性插值移动，到达乡镇或村后停留 `T` 或 `t`，完成后返回 `O` 并保持可见。
+- 未经过路线初始为黑色或灰色，已经过边段染成对应队伍颜色，当前队伍用移动点展示；前三队默认红、黄、蓝，超过三队后使用色盲友好色板。
+- GUI 播放器必须支持加载方案、播放/暂停、拖动进度条、倍速、重置、路线显隐、GIF 导出和无声 MP4 导出；无声 MP4 采用 `imageio[ffmpeg]` / `imageio-ffmpeg`。
+- 坐标布局第一版采用手工转录直线图 layout JSON 作为优先布局，文件为 `data/processed/road_network_layout/original-map-layout.json`；自动布局只作为兜底。该布局第一版复原节点空间位置，动画边几何采用节点间直线；若后续展示必须沿人工折线移动，再扩展 edge polyline 布局。
+- B8 调用 B3-B7 现有入口重算指标、审计和报告数据；正式展示默认使用 B3 final 审计，candidate 审计只进入调试区。
+- 第一版只支持导入候选方案；A 线算法运行按钮置灰或标注待接入，并预留 `AlgorithmRunner` adapter，不在 B8 内实现搜索。
+- 旧契约或旧路网输出严格拒绝进入正式结果；无效候选只进入 GUI 调试区，报告区和正式比较默认隐藏。
+- B8 导出物必须记录 Git commit、路网 TSV SHA256、路线契约版本、输入文件路径和 B3 final 审计状态。
+- GUI 或导出入口发现 schema/data/contract mismatch 时必须在顶部摘要或 README 中显示醒目告警，不允许静默修复。
+- 当前阶段不修改 A 线算法代码；如后续发现 A 线源代码仍产生旧契约输出，先向工程师反馈并等待拍板。
+- 输出目录使用 `outputs/b8/<timestamp>/`，保存图、动画、表格和 README；默认不提交生成图、GIF 或视频，最终报告资产是否入库另行确认。
+
+执行计划：
+
+1. `shared/viz-dependencies`：新增 `viz` optional extra，至少包含 Matplotlib、Pillow、ImageIO 和 `imageio[ffmpeg]` / `imageio-ffmpeg`。
+2. `b/route-animation-visualization` 第一段：新增 `mm_final.visualization` 包，定义 layout、timeline、animation state、route progress、team style 等纯数据结构。
+3. 实现 `RouteAnimationTimeline.from_route_plan(...)`，复用 B3 final 和 B2 展开路径，生成每队的行驶段、停留段、完成时间和可渲染路线片段。
+4. 实现 `state_at(time_hour)`，返回队伍当前位置、已走线段、当前停留节点、已完成队伍和全局进度；重点测试 `0/mid/end` 三类时刻。
+5. 实现 layout 支持：优先读取 `data/processed/road_network_layout/original-map-layout.json`，缓存布局，允许后续人工微调坐标，自动布局只作为兜底，第一版边几何采用节点间直线。
+6. 实现 Matplotlib 帧渲染：完整路网底图、节点样式、未经过线段、已染色线段、当前移动点、时间标注、图例和可选边权标签。
+7. 实现静态导出：起始帧、任意时刻帧、完成帧、最终路线图，以及第 (1)-(4) 问所需的距离/耗时柱状图、上下界差距图和参数敏感性图。
+8. 实现 GIF 与无声 MP4 导出：按播放比例和 fps 逐帧调用同一渲染函数，验证文件非空、首末帧不同，并在 README 记录播放比例、帧率和视频编码依赖。
+9. 实现表格和 README 导出：记录输入路径、参数、审计状态、播放比例、fps、输出文件清单和复现说明。
+10. 新增 B8a 单测：小图手算路线、停留段、位置插值、边内部分染色、layout JSON、PNG/GIF smoke 和正式路网 smoke。
+11. B8b 第一版 GUI：在 `apps/` 中创建播放器入口，加载 RoutePlan 和 layout，复用 timeline，提供播放/暂停、进度条、倍速、路线显隐、GIF 导出和无声 MP4 导出。
+12. B8b 验收：至少覆盖 GUI 入口可导入、timeline 加载不崩溃、手动拖动时图像更新；交互细节以人工验收为主。
 
 完成标准：
 
-- 能生成书面报告可直接使用的路线图和指标图。
-- 动态展示能直观看到每组路线推进过程。
-- 第一阶段至少支持静态图和 GIF 导出；后续再评估交互式 Plotly 或 Streamlit GUI。
+- B8a 能从 `RoutePlan` 和可选 B5/B6/B7 报告生成 timeline、任意时刻帧、最终路线图、GIF、无声 MP4、指标图、表格和 README。
+- B8b 能加载同一个 timeline，并支持播放、暂停、拖动进度条查看任意模型时刻。
+- GUI 和导出结果能清楚显示候选来源、审计状态、是否强证明、是否候选池最优，避免把启发式候选包装成证明。
+- 旧契约结果被严格拒绝进入正式导出；导出 README 可复现地记录数据版本和告警。
+
+当前已落地切片：
+
+- 已新增 `mm_final.visualization` 包，覆盖 layout、timeline、rendering 和 exports 四层。
+- 已实现 `RouteAnimationTimeline.state_at(time_hour)`、严格 B3 final 门禁、PNG/GIF/无声 MP4 导出、README/CSV/JSON 导出和数据版本锁定。
+- 已新增 `apps/gui/route_animation_player.py` 作为第一版无 GUI 重依赖入口；它只调用 B8 后端，不触发 A 线算法。
+- 已新增 `apps/gui/route_animation_gui.py` 作为 B8b PySide6/Qt 拖动播放器；它复用当前 timeline 和 renderer，支持加载方案、播放/暂停、重置、拖动进度条、倍速、路线显隐、GIF/无声 MP4 导出和 B3 final 诊断展示。
 
 ## 4. A/B 握手点
 

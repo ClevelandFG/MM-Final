@@ -27,14 +27,14 @@ def test_node_classification_and_counts():
     assert classify_node("I") is NodeType.TOWN
     assert classify_node("1") is NodeType.VILLAGE
     assert classify_node("35") is NodeType.VILLAGE
-    assert classify_node("U01") is NodeType.AUXILIARY
-    assert classify_node("U05") is NodeType.AUXILIARY
+    assert classify_node("U1") is NodeType.AUXILIARY
+    assert classify_node("U6") is NodeType.AUXILIARY
     assert classify_node("X") is NodeType.UNKNOWN
 
     assert len(TOWN_NODES) == 17
     assert DEPOT not in TOWN_NODES
     assert len(VILLAGE_NODES) == 35
-    assert len(AUXILIARY_NODES) == 5
+    assert len(AUXILIARY_NODES) == 6
     assert len(REQUIRED_VISIT_NODES) == 52
 
 
@@ -44,8 +44,8 @@ def test_default_road_network_loads_and_validates_official_tsv():
     assert result.is_valid
     assert not result.diagnostics
     assert result.network is not None
-    assert result.network.node_count == 58
-    assert result.network.edge_count == 91
+    assert result.network.node_count == 59
+    assert result.network.edge_count == 94
     assert REQUIRED_VISIT_NODES.issubset(result.network.nodes)
     assert result.network.has_edge("P", "O")
     assert result.network.edge_weight_km("P", "O") == 10.1

@@ -81,7 +81,7 @@ B 线不应该做：
 5. B0 使用两类手工样例：`schema-smoke` 用于验证字段结构和读取，不要求覆盖全部必访点；`full-coverage-smoke` 用于后续覆盖审计，要求覆盖全部乡镇和村节点。
 6. `required_visit_order` 是必访停留节点顺序，不是完整行驶路径。现实路线必须从 `O` 出发并回到 `O`，但 `O` 由 `depot` 和 `expanded_node_path` 表达，不写入 `required_visit_order`。
 7. `required_visit_order` 中出现 `O` 时判为 error，不自动删除，也不只给 warning。
-8. `required_visit_order` 中出现 `U01`–`U05` 等辅助道路节点时判为 error。
+8. `required_visit_order` 中出现 `U1`–`U6` 等辅助道路节点时判为 error。
 9. Nullable 字段必须保留字段名，暂未计算时写为 `null`；缺少这些字段时判为契约错误。
 10. 遇到契约未定义的额外字段时给 warning，并尽量保留原始信息，不静默忽略。
 11. 错误诊断内部可使用结构化形式，例如 code、path、message；对外输出仍遵守 `AuditResult.errors` 和 `AuditResult.warnings` 的 `list[string]` 契约。
@@ -94,7 +94,7 @@ B 线不应该做：
 
 - 能读取 `schema_version = route-plan-v1` 的方案。
 - 缺少必要字段或 nullable 字段时能报错。
-- `required_visit_order` 中出现 `U01` 等辅助道路节点时能报错。
+- `required_visit_order` 中出现 `U1` 等辅助道路节点时能报错。
 - `required_visit_order` 中包含 `O` 时能报错，避免把县政府误计入停留。
 - `schema-smoke` 样例可用于读取测试，但不得被误标为完整覆盖合法方案。
 - 未定义额外字段能产生 warning，且不影响读取已定义字段。
@@ -114,7 +114,7 @@ B 线不应该做：
 ### 输入
 
 - `data/raw/road_network.tsv`
-- 题面节点规则：`O`、`A`-`R` 中除 `O` 外的大写字母、`1`-`35`、`U01`-`U05`
+- 题面节点规则：`O`、`A`-`R` 中除 `O` 外的大写字母、`1`-`35`、`U1`-`U6`
 
 ### 输出
 
@@ -157,7 +157,7 @@ B 线不应该做：
 - `O` 被识别为县政府所在地，不计入乡镇或村停留。
 - `A`、`R` 被识别为乡镇；`I` 是大写字母 I，不是数字 1。
 - `1`、`35` 被识别为村。
-- `U01`、`U05` 被识别为辅助道路节点。
+- `U1`、`U6` 被识别为辅助道路节点。
 - 边权必须为正数。
 - 原始路网必须连通。
 - 正式 TSV 的节点数量、边数、必访节点覆盖和辅助节点集合必须与题面规则一致。
@@ -420,7 +420,7 @@ B2 实现时应顺手补齐 A 线后续接入五种经典算法所需的最小�
 
 - 遗漏一个村节点时，错误信息必须指出具体节点。
 - 重复分配一个乡镇节点时，错误信息必须指出节点和路线。
-- `required_visit_order` 出现 `U03` 时必须报错。
+- `required_visit_order` 出现 `U3` 时必须报错。
 - 路线未返回 `O` 时必须报错。
 - `distance_km` 与复算结果不一致时必须报错或至少 warning。
 - `candidate` 模式下覆盖遗漏、重复、空路线和 metrics 不一致应进入 warning，不应阻断中间候选方案诊断。
@@ -773,7 +773,9 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 
 ### 目标
 
-负责项目后续 GUI 与可视化交付，但第一阶段先做报告图和可导出的动态路线过程，不急于搭完整 GUI。
+负责项目后续 GUI 与可视化交付。B8 的第一版不是单纯静态报告图，而是先建立可复用的 **路线动画时间轴 + 渲染导出核心**，再用轻量 GUI 播放器复用同一套时间轴。
+
+核心体验目标为：根据 `RoutePlan` 在 GUI 中展示多组巡视队的动态推进过程，默认用真实播放 1 秒代表模型时间 1 小时；巡视队用彩色移动点在线路上移动，未经过路线保持黑色或灰色，已经过线段染成对应队伍颜色；用户可拖动进度条查看任意模型时刻，并能导出 GIF 和无声 MP4。无声 MP4 采用 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线。
 
 ### 输入
 
@@ -786,17 +788,101 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 - 路网静态图。
 - 路线组高亮图。
 - 路线运行过程动画。
-- GIF 或无声视频导出。
+- GIF 与无声 MP4 导出。
 - 后续轻量 GUI 原型。
+
+### 已拍板决策
+
+1. B8 先走 `shared/viz-dependencies` 增加可视化可选依赖，再走 `b/route-animation-visualization` 实现动画与 GUI；不得直接在 `main` 上实现。
+2. B8 拆成 B8a 和 B8b：B8a 做时间轴模型、任意时刻快照、帧渲染、GIF/视频导出和报告图；B8b 做 GUI 播放器。
+3. B8a 第一版必须覆盖时间轴模型、任意时刻快照、静态帧、GIF、报告图、表格和 README 导出。
+4. B8b 第一版必须覆盖加载方案、播放/暂停、拖动进度条、倍速、路线显隐、导出 GIF 和导出无声 MP4；MP4 依赖采用 `imageio[ffmpeg]` / `imageio-ffmpeg`。
+5. 纯可视化逻辑放在 `mm_final.visualization`，GUI 入口放在 `apps/`；B8 不把展示逻辑放入 `mm_final.evaluation`。
+6. 可视化依赖放入 `viz` optional extra；Matplotlib、Pillow/ImageIO 和 `imageio[ffmpeg]` / `imageio-ffmpeg` 作为第一版基础依赖，Plotly 后置。
+7. B8b GUI 框架优先考虑 PySide6/Qt 播放器；Streamlit 不作为第一版播放器首选。
+8. GUI 模式按第 (1) 固定组、第 (2) 最少组、第 (3) 足够人手、第 (4) 参数敏感性组织。
+9. 第一版只支持导入候选方案；A 线算法运行按钮置灰或标注待接入，不在 B8 内实现搜索。
+10. 为 A 线未来接入预留 `AlgorithmRunner` adapter，但第一版不绑定 A 线内部实现。
+11. 输入文件为多个 `RoutePlan` JSON，加可选 B5/B6/B7 report JSON；第一版不定义新的 candidate-pool envelope。
+12. B8 调用 B3-B7 现有入口重算指标、审计和报告数据；展示层不手写评价指标。
+13. 正式展示默认使用 B3 final 审计；candidate 审计只进入调试区，不进入正式报告导出。
+14. 参数输入包括 `T`、`t`、`v`、`time_limit`、`k_values`，点击刷新后重算，不做默认实时重算。
+15. 参数敏感性情景读取 B7 `ParameterScenario` JSON，也支持 B7 默认情景。
+16. B8a 新增 `RouteAnimationTimeline` 或等价结构，提供 `state_at(time_hour)`。
+17. 时间轴内部使用模型小时；默认播放比例为真实播放 1 秒代表模型时间 1 小时，并允许导出时覆盖。
+18. 动画播放范围默认为 `0` 到方案 `completion_time_hour`，不固定为 24 小时。
+19. 队伍沿 B2/B3 复算的 `expanded_node_path` 按边长和速度线性插值移动。
+20. 队伍到达乡镇或村后停留对应 `T` 或 `t`；停留时点留在节点，可用等待或脉冲效果提示。
+21. 所有队伍 0 时刻位于 `O`；完成各自路线后返回 `O` 并保持可见。
+22. 未经过路线初始为黑色或灰色；经过的边段染成对应队伍颜色；当前移动点显示在路线前沿。
+23. 支持边内部分染色：队伍走到边中间时，只把已走过的边段染色。
+24. 前三队默认使用红、黄、蓝；超过三队时扩展为色盲友好色板。
+25. 每队可显示或隐藏；显隐只影响展示，不影响时间轴计算。
+26. 进度条显示模型时间小时，可拖动到任意时刻。
+27. 播放控制包括播放/暂停、拖动进度条、倍速、重置和导出 GIF。
+28. GIF 默认 10 fps，按 `1s = 1h` 的播放比例生成，允许覆盖帧率和比例。
+29. GIF 默认时长由模型完成时间决定，例如 18 小时输出约 18 秒。
+30. 静态最终路线图由 `state_at(completion_time_hour)` 派生，避免静态图和动画色彩、布局漂移。
+31. 坐标布局第一版采用手工转录直线图 layout JSON 作为优先布局，文件为 `data/processed/road_network_layout/original-map-layout.json`；自动布局只能作为缺失 layout 时的兜底。
+32. 完整道路网络作为底图，辅助节点弱化显示。
+33. depot、乡镇、村、辅助节点使用不同形状或颜色。
+34. 边权标签默认关闭，高分辨率导出或选中路线时显示。
+35. 指标图包括距离/耗时柱状图、上下界差距图、B7 情景折线或堆叠条。
+36. 第 (1) 问展示 3 组路线动画/最终图和距离/耗时均衡图。
+37. 第 (2) 问展示每个 `k` 的下界、候选上界、状态表和推荐路线动画/图。
+38. 第 (3) 问展示单点一组基线、瓶颈节点、等最短时间候选对比和推荐路线动画。
+39. 第 (4) 问展示情景完成时间、瓶颈切换、travel/town/village 占比和重优化提示。
+40. 导出格式包括 PNG/SVG 静态图、GIF 动画、无声 MP4、CSV/Markdown/JSON 表格和 README。
+41. 输出目录使用 `outputs/b8/<timestamp>/`，保存图、动画、表格和 README。
+42. 默认不提交生成图、GIF 或视频；最终报告资产是否入库另行确认。
+43. 每次导出生成 `README.md`，记录输入、参数、审计状态、播放比例、帧率、文件清单和复现说明。
+44. GUI 状态只保存路径、选中项、播放时刻和显示选项；数学状态来自后端重算，不写回 `RoutePlan`。
+45. 无效方案显示 B3/B5/B6/B7 诊断，不因坏候选导致 GUI 崩溃。
+46. 当前题面规模下直接重算即可，但需缓存 layout、timeline 和最近帧。
+47. 测试覆盖时间轴 `state_at(0/mid/end)`、位置插值、染色边段、停留状态、GIF 非空和首末帧差异；不做脆弱的像素级金图。
+48. GUI 文案中文，文件名和结构化字段保持 ASCII。
+49. Plotly HTML 交互在 Matplotlib/Qt 动画稳定后再做。
+50. 第一版不允许编辑路线，只允许查看、播放和导出。
+51. 支持多候选横向比较，默认展示 B3/B5/B6/B7 推荐项。
+52. GUI 明确显示候选来源、审计状态、是否强证明、是否候选池最优，避免把启发式候选包装成证明。
+53. B8 第一版完成标准为：B8a 能生成 timeline、任意时刻帧、最终图、GIF、指标图、表格和 README；B8b 能加载并拖动播放同一个 timeline。
+54. 对不符合当前契约的旧结果采取严格拒绝策略；例如旧辅助节点命名 `U01`、`U02` 或旧拓扑输出不得进入正式审计、报告图或结论，只能在修复后重新导出。
+55. 无效候选可以进入 GUI 调试区查看诊断，但报告区、正式比较和推荐导出默认隐藏。
+56. B8 导出 README 和机器可读摘要必须记录 Git commit、路网 TSV SHA256、路线契约版本、输入文件路径和 B3 final 审计状态。
+57. 动画边几何第一版采用节点间直线段；若报告美化需要贴合手工直线图的折线细节，再维护 edge polyline，不做自动曲线。
+58. GUI 或导出入口发现 schema、data、contract、审计模式或版本口径不一致时，必须在顶部摘要或 README 中给出醒目告警，不允许静默修复。
+59. 目前不修改 A 线算法代码；若后续发现 A 线源代码仍产生旧契约输出，先向工程师反馈并等待拍板。
+
+### 补充已拍板事项
+
+1. **无声 MP4 导出依赖**：选择 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线。Matplotlib `FFMpegWriter` + 系统 FFmpeg 和 PyAV 不作为第一版首选。
+2. **手工转录直线图布局复原**：选择“直线图底图 + 半手工节点标注 + 归一化 layout JSON”方案。已纳入 `data/processed/road_network_layout/straight-line-layout-source.png` 作为直线图底图源，已纳入 `data/processed/road_network_layout/original-map-layout.json` 作为 B8 渲染器优先读取的节点布局。第一版复原节点空间布局，不手工描摹每条道路的弯曲折线；若后续展示必须沿人工折线移动，再扩展 edge polyline 布局。
+3. **旧结果兼容策略**：旧契约或旧路网输出严格拒绝进入正式结果；GUI 调试区可展示错误诊断，但不做 `U01 -> U1` 的正式兼容映射，也不持久改写旧 JSON。
+4. **版本与告警策略**：所有 B8 导出物记录 Git commit、路网 TSV SHA256、契约版本和审计状态；GUI 顶部或 README 必须显示 schema/data/contract mismatch 告警。
 
 ### 建议实现顺序
 
-1. 先用 Matplotlib + NetworkX 生成报告级静态路网图。
-2. 增加路线组颜色、高亮、边权和节点类型样式。
-3. 用 Matplotlib 动画或逐帧导出生成路线运行过程。
-4. 优先支持 GIF；若必须导出 MP4，再评估 FFmpeg。
-5. 引入 Plotly 支持交互式查看，例如悬停信息、路线组开关和瓶颈高亮。
-6. 等 A/B 契约和结果稳定后，再评估 Streamlit GUI。
+1. `shared/viz-dependencies`：新增 `viz` optional extra，至少包含 Matplotlib、Pillow、ImageIO 和 `imageio[ffmpeg]` / `imageio-ffmpeg`。
+2. `b/route-animation-visualization` 第一段：新增 `mm_final.visualization` 包，定义 layout、timeline、animation state、route progress、team style 等纯数据结构。
+3. 实现 `RouteAnimationTimeline.from_route_plan(...)`，复用 B3 final 和 B2 展开路径，生成每队的行驶段、停留段和完成时间。
+4. 实现 `state_at(time_hour)`，返回队伍当前位置、已走线段、当前停留节点、已完成队伍和全局进度。
+5. 实现 layout 支持：优先读取 `data/processed/road_network_layout/original-map-layout.json`，自动布局仅作为兜底，并允许后续人工微调坐标；第一版动画边几何采用节点间直线。
+6. 实现 Matplotlib 帧渲染：底图、节点样式、未经过线段、已染色线段、当前移动点、时间标注和图例。
+7. 实现静态导出：起始帧、任意时刻帧、完成帧、最终路线图和题目所需指标图。
+8. 实现 GIF 与无声 MP4 导出：按播放比例和 fps 逐帧调用同一渲染函数，验证首末帧不同、文件非空；MP4 通过 ImageIO/`imageio-ffmpeg` 写入。
+9. 实现表格和 README 导出：记录输入路径、参数、审计状态、播放比例、fps、输出文件和复现命令。
+10. 新增 B8a 单测：小图手算路线、停留段、插值位置、染色段、layout JSON、PNG/GIF smoke。
+11. B8b 第一版 GUI：在 `apps/` 中创建播放器入口，加载 RoutePlan 和 layout，复用 timeline，提供播放/暂停、进度条、倍速、路线显隐、GIF 导出和无声 MP4 导出。
+12. B8b smoke 测试：至少覆盖 GUI 入口可导入、timeline 加载不崩溃、拖动进度条时图像更新、路线显隐状态可读；交互细节以手工验收为主。
+
+### 已落地实现切片
+
+- `mm_final.visualization.layout`：读取手工转录直线图 layout JSON，并在缺失 layout 时用稳定自动布局兜底。
+- `mm_final.visualization.timeline`：根据 `RoutePlan`、当前 `RoadNetwork` 和 B2/B3 参数生成 `RouteAnimationTimeline`，支持 `state_at(time_hour)` 查询队伍移动、停留、完成状态和已染色边段。
+- `mm_final.visualization.rendering`：延迟导入 Matplotlib 和 ImageIO，支持 PNG、GIF 和无声 MP4 导出；第一版边几何为节点间直线。
+- `mm_final.visualization.exports`：提供严格 B3 final 门禁、版本锁定信息、`timeline-summary.json`、`route-summary.csv` 和 README 导出；旧契约结果默认拒绝进入正式导出。
+- `apps/gui/route_animation_player.py`：提供无 GUI 重依赖的路线动画导出入口。
+- `apps/gui/route_animation_gui.py`：提供 B8b PySide6/Qt 路线动画播放器，复用同一套 timeline 和 renderer，支持加载、播放/暂停、拖动进度条、倍速、路线显隐、GIF/无声 MP4 导出和 B3 final 诊断展示。
 
 ### 潜在交互需求
 
@@ -862,7 +948,7 @@ B 线最终交付不是单独一组数值，而是：
 
 - **格式漂移**：A/B 各自维护不同方案结构。应通过契约测试阻断。
 - **单位漂移**：公里、小时、速度单位混用。应在字段名中保留单位。
-- **辅助节点误计停留**：`U01`-`U05` 只能通行，不能停留。
+- **辅助节点误计停留**：`U1`-`U6` 只能通行，不能停留。
 - **过早宣称不可能**：候选方案不可行不等于组数不可能，必须有下界支持。
 - **下界过弱**：弱下界只能用于筛查，不能支撑强结论。
 - **参数敏感性只给图不解释**：必须说明为什么路线结构或瓶颈发生变化。

@@ -4,6 +4,57 @@
 
 ---
 
+## 2026-06-13  实现 B8b PySide6 路线动画播放器
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B8a 已能导出路线动画包，但还缺少可交互播放器，无法在 GUI 中加载方案、播放/暂停、拖动进度条、查看任意模型时刻、控制路线显隐并直接导出 GIF/无声 MP4。
+- **解决方案**：
+  - 新增 `apps/gui/route_animation_gui.py`，实现 PySide6/Qt 路线动画播放器，复用 `mm_final.visualization` 的 timeline、layout、B3 final 门禁和 Matplotlib/ImageIO 渲染后端。
+  - GUI 支持加载 `RoutePlan` JSON、播放/暂停、重置、拖动进度条、倍速播放、路线组显隐、当前帧渲染、GIF 导出、无声 MP4 导出和 README/表格导出。
+  - GUI 对未通过 B3 final 的方案显示醒目的 `CONTRACT MISMATCH` 告警，不让旧契约或非法路线进入正式播放。
+  - `RenderOptions` 新增 `visible_route_ids`，使 GUI 路线显隐和导出动画使用同一套渲染口径。
+  - `pyproject.toml` 新增 `gui` optional extra，包含 `PySide6`，并同步 `uv.lock`。
+  - 新增 B8b GUI smoke 测试，在 Qt offscreen 模式下覆盖加载、拖动到中间时刻、图像渲染和路线显隐。
+- **影响文件**：`apps/gui/route_animation_gui.py`、`apps/README.md`、`src/mm_final/visualization/rendering.py`、`tests/test_route_animation_gui.py`、`pyproject.toml`、`uv.lock`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/environment-and-dependencies.md`、`docs/changes.md`。
+
+---
+
+## 2026-06-13  沉淀 B8 兼容、版本锁定与开工边界
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：A 线已推送旧路网口径下的结果文件，部分输出仍包含旧辅助节点命名和旧拓扑路径；B8 即将实现可视化与 GUI，需要避免把旧契约结果误展示为正式结论，同时明确本阶段是否修改 A 线代码。
+- **解决方案**：
+  - 确认旧契约或旧路网输出严格拒绝进入正式结果；无效候选只允许进入 GUI 调试区查看诊断，报告区和正式比较默认隐藏。
+  - 确认 B8 导出 README 和机器可读摘要必须记录 Git commit、路网 TSV SHA256、路线契约版本、输入路径和 B3 final 审计状态。
+  - 确认第一版动画边几何采用节点间直线；若后续报告美化需要贴合手工直线图折线，再扩展 edge polyline。
+  - 确认 GUI 或导出入口发现 schema、data、contract、审计模式或版本口径不一致时必须显示醒目告警，不允许静默修复。
+  - 确认当前阶段不修改 A 线算法代码；如后续发现 A 线源代码仍产生旧契约输出，先向工程师反馈并等待拍板。
+  - 新增 `mm_final.visualization` 包，实现 layout 读取、稳定兜底布局、路线动画时间轴、任意时刻快照、PNG/GIF/无声 MP4 渲染导出、版本锁定信息和严格 B3 final 门禁。
+  - 新增 `apps/gui/route_animation_player.py` 作为无 GUI 重依赖的 B8 第一版展示入口，可加载 `RoutePlan` 并导出 README、表格、帧、GIF 或无声 MP4；入口不运行或修改 A 线算法。
+  - 新增 B8 测试，覆盖小图时间轴、边内插值、停留状态、旧契约路径严格拒绝、版本锁定 README、应用入口、PNG/GIF/MP4 smoke。
+  - 在 `pyproject.toml` 中新增 `viz` optional extra，并同步 `uv.lock`；可视化依赖包括 Matplotlib、Pillow、ImageIO 和 `imageio-ffmpeg`。
+- **影响文件**：`src/mm_final/visualization/`、`apps/gui/route_animation_player.py`、`apps/gui/__init__.py`、`apps/README.md`、`tests/test_route_animation_visualization.py`、`pyproject.toml`、`uv.lock`、`docs/context.md`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/changes.md`。
+
+## 2026-06-11  沉淀 B8 GUI 与动态可视化决策
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B8 需要同时支撑书面报告、路线动态展示、GIF/无声视频导出和后续 GUI，原先“静态图 + GIF + GUI 后置”的口径不足以覆盖可拖动进度条、按 1 秒代表 1 小时播放、队伍移动点、路线染色和导出动图等交互需求；同时需要明确 MP4 依赖和手工转录直线图布局复原方案。
+- **解决方案**：
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B8 阶段沉淀 53 条已拍板决策，确认 B8 先走 `shared/viz-dependencies`，再走 `b/route-animation-visualization`。
+  - 确认 B8 拆成 B8a 和 B8b：B8a 负责 `RouteAnimationTimeline`、任意时刻快照、帧渲染、静态图、GIF、表格和 README 导出；B8b 负责 GUI 播放器。
+  - 确认动态展示默认真实播放 1 秒代表模型时间 1 小时，队伍沿 B2/B3 复算的 `expanded_node_path` 移动，未经过路线为黑色或灰色，经过线段染成对应队伍颜色，并支持拖动进度条查看任意时刻。
+  - 确认 GUI 模式按第 (1)-(4) 问组织，第一版只导入候选方案，不在 B8 内实现 A 线搜索；A 线算法运行按钮置灰或标注待接入，并预留 `AlgorithmRunner` adapter。
+  - 确认 B8 正式展示默认使用 B3 final 审计，展示层只调用 B3-B7 现有入口重算指标，不手写评价指标。
+  - 确认可视化坐标必须支持可持久化 layout JSON；手工转录直线图布局复原采用“直线图底图 + 半手工节点标注 + 归一化 layout JSON”方案，自动布局只作为兜底。
+  - 确认无声 MP4 已是需求，并选择 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线；Matplotlib `FFMpegWriter` + 系统 FFmpeg 和 PyAV 不作为第一版首选。
+  - 新增 `data/processed/road_network_layout/straight-line-layout-source.png` 保存手工转录直线图底图源，仅用于可视化布局复原和人工复核，不参与距离或路径计算。
+  - 新增 `data/processed/road_network_layout/original-map-layout.json`，覆盖官方路网 59 个节点，保存半手工标注的归一化坐标和直线图像素锚点；第一版复原节点布局，不复原道路曲线。
+  - 新增 `tests/test_original_map_layout.py`，验证 layout JSON 覆盖官方路网节点、坐标在 `[0,1]` 范围内。
+  - 在 `docs/implementation-plan.md` 中把 B8 执行计划细化为 12 个步骤，覆盖依赖分支、可视化包、时间轴、布局、帧渲染、静态导出、GIF、README、测试和 GUI 播放器。
+  - 在 `docs/environment-and-dependencies.md` 中同步 GUI 与可视化依赖策略：Matplotlib/Pillow/ImageIO 先支撑 B8a，PySide6/Qt 优先评估 B8b 播放器，Streamlit 保留给后续报告查看器或轻量仪表盘，MP4 采用 `imageio[ffmpeg]` / `imageio-ffmpeg`。
+  - 在 `docs/context.md` 中补充路线动画时间轴、动画快照、可视化布局和题面直线图布局术语。
+- **影响文件**：`data/processed/road_network_layout/straight-line-layout-source.png`、`data/processed/road_network_layout/original-map-layout.json`、`data/README.md`、`tests/test_original_map_layout.py`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/environment-and-dependencies.md`、`docs/context.md`、`docs/changes.md`。
+
 ## 2026-06-11  沉淀并实现 B7 参数敏感性分析
 
 - **版本号**：未发布，仍处于第一个可行版本前。
