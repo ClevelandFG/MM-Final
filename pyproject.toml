@@ -4,6 +4,7 @@ version = "0.0.0"
 description = "County road inspection route planning and audit project."
 requires-python = ">=3.9"
 dependencies = [
+  "elkai>=2.0.1",
   "networkx>=3.2",
 ]
 
