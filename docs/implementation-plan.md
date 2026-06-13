@@ -469,9 +469,13 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 动态展示按 B2/B3 复算的 `expanded_node_path` 推进：所有队伍从 `O` 出发，沿边按距离和速度线性插值移动，到达乡镇或村后停留 `T` 或 `t`，完成后返回 `O` 并保持可见。
 - 未经过路线初始为黑色或灰色，已经过边段染成对应队伍颜色，当前队伍用移动点展示；前三队默认红、黄、蓝，超过三队后使用色盲友好色板。
 - GUI 播放器必须支持加载方案、播放/暂停、拖动进度条、倍速、重置、路线显隐、GIF 导出和无声 MP4 导出；无声 MP4 采用 `imageio[ffmpeg]` / `imageio-ffmpeg`。
-- 坐标布局第一版采用题面原图复原 layout JSON 作为优先布局，文件为 `data/processed/road_network_layout/original-map-layout.json`；自动布局只作为兜底。该布局第一版复原节点空间位置，不手工描摹原图道路曲线；若后续展示必须沿原图道路曲线移动，再扩展 edge polyline 布局。
+- 坐标布局第一版采用手工转录直线图 layout JSON 作为优先布局，文件为 `data/processed/road_network_layout/original-map-layout.json`；自动布局只作为兜底。该布局第一版复原节点空间位置，动画边几何采用节点间直线；若后续展示必须沿人工折线移动，再扩展 edge polyline 布局。
 - B8 调用 B3-B7 现有入口重算指标、审计和报告数据；正式展示默认使用 B3 final 审计，candidate 审计只进入调试区。
 - 第一版只支持导入候选方案；A 线算法运行按钮置灰或标注待接入，并预留 `AlgorithmRunner` adapter，不在 B8 内实现搜索。
+- 旧契约或旧路网输出严格拒绝进入正式结果；无效候选只进入 GUI 调试区，报告区和正式比较默认隐藏。
+- B8 导出物必须记录 Git commit、路网 TSV SHA256、路线契约版本、输入文件路径和 B3 final 审计状态。
+- GUI 或导出入口发现 schema/data/contract mismatch 时必须在顶部摘要或 README 中显示醒目告警，不允许静默修复。
+- 当前阶段不修改 A 线算法代码；如后续发现 A 线源代码仍产生旧契约输出，先向工程师反馈并等待拍板。
 - 输出目录使用 `outputs/b8/<timestamp>/`，保存图、动画、表格和 README；默认不提交生成图、GIF 或视频，最终报告资产是否入库另行确认。
 
 执行计划：
@@ -480,7 +484,7 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 2. `b/route-animation-visualization` 第一段：新增 `mm_final.visualization` 包，定义 layout、timeline、animation state、route progress、team style 等纯数据结构。
 3. 实现 `RouteAnimationTimeline.from_route_plan(...)`，复用 B3 final 和 B2 展开路径，生成每队的行驶段、停留段、完成时间和可渲染路线片段。
 4. 实现 `state_at(time_hour)`，返回队伍当前位置、已走线段、当前停留节点、已完成队伍和全局进度；重点测试 `0/mid/end` 三类时刻。
-5. 实现 layout 支持：优先读取 `data/processed/road_network_layout/original-map-layout.json`，缓存布局，允许后续人工微调坐标，自动布局只作为兜底。
+5. 实现 layout 支持：优先读取 `data/processed/road_network_layout/original-map-layout.json`，缓存布局，允许后续人工微调坐标，自动布局只作为兜底，第一版边几何采用节点间直线。
 6. 实现 Matplotlib 帧渲染：完整路网底图、节点样式、未经过线段、已染色线段、当前移动点、时间标注、图例和可选边权标签。
 7. 实现静态导出：起始帧、任意时刻帧、完成帧、最终路线图，以及第 (1)-(4) 问所需的距离/耗时柱状图、上下界差距图和参数敏感性图。
 8. 实现 GIF 与无声 MP4 导出：按播放比例和 fps 逐帧调用同一渲染函数，验证文件非空、首末帧不同，并在 README 记录播放比例、帧率和视频编码依赖。
@@ -494,6 +498,14 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - B8a 能从 `RoutePlan` 和可选 B5/B6/B7 报告生成 timeline、任意时刻帧、最终路线图、GIF、无声 MP4、指标图、表格和 README。
 - B8b 能加载同一个 timeline，并支持播放、暂停、拖动进度条查看任意模型时刻。
 - GUI 和导出结果能清楚显示候选来源、审计状态、是否强证明、是否候选池最优，避免把启发式候选包装成证明。
+- 旧契约结果被严格拒绝进入正式导出；导出 README 可复现地记录数据版本和告警。
+
+当前已落地切片：
+
+- 已新增 `mm_final.visualization` 包，覆盖 layout、timeline、rendering 和 exports 四层。
+- 已实现 `RouteAnimationTimeline.state_at(time_hour)`、严格 B3 final 门禁、PNG/GIF/无声 MP4 导出、README/CSV/JSON 导出和数据版本锁定。
+- 已新增 `apps/gui/route_animation_player.py` 作为第一版无 GUI 重依赖入口；它只调用 B8 后端，不触发 A 线算法。
+- 尚未实现完整 PySide6/Qt 拖动播放器；后续 B8b 可在当前 timeline 和 renderer 之上封装。
 
 ## 4. A/B 握手点
 

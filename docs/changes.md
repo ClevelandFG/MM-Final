@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-06-13  沉淀 B8 兼容、版本锁定与开工边界
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：A 线已推送旧路网口径下的结果文件，部分输出仍包含旧辅助节点命名和旧拓扑路径；B8 即将实现可视化与 GUI，需要避免把旧契约结果误展示为正式结论，同时明确本阶段是否修改 A 线代码。
+- **解决方案**：
+  - 确认旧契约或旧路网输出严格拒绝进入正式结果；无效候选只允许进入 GUI 调试区查看诊断，报告区和正式比较默认隐藏。
+  - 确认 B8 导出 README 和机器可读摘要必须记录 Git commit、路网 TSV SHA256、路线契约版本、输入路径和 B3 final 审计状态。
+  - 确认第一版动画边几何采用节点间直线；若后续报告美化需要贴合手工直线图折线，再扩展 edge polyline。
+  - 确认 GUI 或导出入口发现 schema、data、contract、审计模式或版本口径不一致时必须显示醒目告警，不允许静默修复。
+  - 确认当前阶段不修改 A 线算法代码；如后续发现 A 线源代码仍产生旧契约输出，先向工程师反馈并等待拍板。
+  - 新增 `mm_final.visualization` 包，实现 layout 读取、稳定兜底布局、路线动画时间轴、任意时刻快照、PNG/GIF/无声 MP4 渲染导出、版本锁定信息和严格 B3 final 门禁。
+  - 新增 `apps/gui/route_animation_player.py` 作为无 GUI 重依赖的 B8 第一版展示入口，可加载 `RoutePlan` 并导出 README、表格、帧、GIF 或无声 MP4；入口不运行或修改 A 线算法。
+  - 新增 B8 测试，覆盖小图时间轴、边内插值、停留状态、旧契约路径严格拒绝、版本锁定 README、应用入口、PNG/GIF/MP4 smoke。
+  - 在 `pyproject.toml` 中新增 `viz` optional extra，并同步 `uv.lock`；可视化依赖包括 Matplotlib、Pillow、ImageIO 和 `imageio-ffmpeg`。
+- **影响文件**：`src/mm_final/visualization/`、`apps/gui/route_animation_player.py`、`apps/gui/__init__.py`、`apps/README.md`、`tests/test_route_animation_visualization.py`、`pyproject.toml`、`uv.lock`、`docs/context.md`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/changes.md`。
+
 ## 2026-06-11  沉淀 B8 GUI 与动态可视化决策
 
 - **版本号**：未发布，仍处于第一个可行版本前。

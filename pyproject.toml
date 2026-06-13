@@ -12,6 +12,13 @@ dependencies = [
 dev = [
   "pytest>=8.0",
 ]
+viz = [
+  "matplotlib>=3.8",
+  "pillow>=10.0",
+  "imageio[ffmpeg]>=2.34",
+  "imageio-ffmpeg>=0.4.9",
+]
+gui = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

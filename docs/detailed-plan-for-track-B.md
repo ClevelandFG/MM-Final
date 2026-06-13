@@ -823,7 +823,7 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 28. GIF 默认 10 fps，按 `1s = 1h` 的播放比例生成，允许覆盖帧率和比例。
 29. GIF 默认时长由模型完成时间决定，例如 18 小时输出约 18 秒。
 30. 静态最终路线图由 `state_at(completion_time_hour)` 派生，避免静态图和动画色彩、布局漂移。
-31. 坐标布局第一版采用题面原图复原 layout JSON 作为优先布局，文件为 `data/processed/road_network_layout/original-map-layout.json`；自动布局只能作为缺失 layout 时的兜底。
+31. 坐标布局第一版采用手工转录直线图 layout JSON 作为优先布局，文件为 `data/processed/road_network_layout/original-map-layout.json`；自动布局只能作为缺失 layout 时的兜底。
 32. 完整道路网络作为底图，辅助节点弱化显示。
 33. depot、乡镇、村、辅助节点使用不同形状或颜色。
 34. 边权标签默认关闭，高分辨率导出或选中路线时显示。
@@ -846,11 +846,19 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 51. 支持多候选横向比较，默认展示 B3/B5/B6/B7 推荐项。
 52. GUI 明确显示候选来源、审计状态、是否强证明、是否候选池最优，避免把启发式候选包装成证明。
 53. B8 第一版完成标准为：B8a 能生成 timeline、任意时刻帧、最终图、GIF、指标图、表格和 README；B8b 能加载并拖动播放同一个 timeline。
+54. 对不符合当前契约的旧结果采取严格拒绝策略；例如旧辅助节点命名 `U01`、`U02` 或旧拓扑输出不得进入正式审计、报告图或结论，只能在修复后重新导出。
+55. 无效候选可以进入 GUI 调试区查看诊断，但报告区、正式比较和推荐导出默认隐藏。
+56. B8 导出 README 和机器可读摘要必须记录 Git commit、路网 TSV SHA256、路线契约版本、输入文件路径和 B3 final 审计状态。
+57. 动画边几何第一版采用节点间直线段；若报告美化需要贴合手工直线图的折线细节，再维护 edge polyline，不做自动曲线。
+58. GUI 或导出入口发现 schema、data、contract、审计模式或版本口径不一致时，必须在顶部摘要或 README 中给出醒目告警，不允许静默修复。
+59. 目前不修改 A 线算法代码；若后续发现 A 线源代码仍产生旧契约输出，先向工程师反馈并等待拍板。
 
 ### 补充已拍板事项
 
 1. **无声 MP4 导出依赖**：选择 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线。Matplotlib `FFMpegWriter` + 系统 FFmpeg 和 PyAV 不作为第一版首选。
 2. **手工转录直线图布局复原**：选择“直线图底图 + 半手工节点标注 + 归一化 layout JSON”方案。已纳入 `data/processed/road_network_layout/straight-line-layout-source.png` 作为直线图底图源，已纳入 `data/processed/road_network_layout/original-map-layout.json` 作为 B8 渲染器优先读取的节点布局。第一版复原节点空间布局，不手工描摹每条道路的弯曲折线；若后续展示必须沿人工折线移动，再扩展 edge polyline 布局。
+3. **旧结果兼容策略**：旧契约或旧路网输出严格拒绝进入正式结果；GUI 调试区可展示错误诊断，但不做 `U01 -> U1` 的正式兼容映射，也不持久改写旧 JSON。
+4. **版本与告警策略**：所有 B8 导出物记录 Git commit、路网 TSV SHA256、契约版本和审计状态；GUI 顶部或 README 必须显示 schema/data/contract mismatch 告警。
 
 ### 建议实现顺序
 
@@ -858,7 +866,7 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 2. `b/route-animation-visualization` 第一段：新增 `mm_final.visualization` 包，定义 layout、timeline、animation state、route progress、team style 等纯数据结构。
 3. 实现 `RouteAnimationTimeline.from_route_plan(...)`，复用 B3 final 和 B2 展开路径，生成每队的行驶段、停留段和完成时间。
 4. 实现 `state_at(time_hour)`，返回队伍当前位置、已走线段、当前停留节点、已完成队伍和全局进度。
-5. 实现 layout 支持：优先读取 `data/processed/road_network_layout/original-map-layout.json`，自动布局仅作为兜底，并允许后续人工微调坐标。
+5. 实现 layout 支持：优先读取 `data/processed/road_network_layout/original-map-layout.json`，自动布局仅作为兜底，并允许后续人工微调坐标；第一版动画边几何采用节点间直线。
 6. 实现 Matplotlib 帧渲染：底图、节点样式、未经过线段、已染色线段、当前移动点、时间标注和图例。
 7. 实现静态导出：起始帧、任意时刻帧、完成帧、最终路线图和题目所需指标图。
 8. 实现 GIF 与无声 MP4 导出：按播放比例和 fps 逐帧调用同一渲染函数，验证首末帧不同、文件非空；MP4 通过 ImageIO/`imageio-ffmpeg` 写入。
@@ -866,6 +874,14 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 10. 新增 B8a 单测：小图手算路线、停留段、插值位置、染色段、layout JSON、PNG/GIF smoke。
 11. B8b 第一版 GUI：在 `apps/` 中创建播放器入口，加载 RoutePlan 和 layout，复用 timeline，提供播放/暂停、进度条、倍速、路线显隐和 GIF 导出。
 12. B8b smoke 测试：至少覆盖 GUI 入口可导入、timeline 加载不崩溃；交互细节以手工验收为主。
+
+### 已落地实现切片
+
+- `mm_final.visualization.layout`：读取手工转录直线图 layout JSON，并在缺失 layout 时用稳定自动布局兜底。
+- `mm_final.visualization.timeline`：根据 `RoutePlan`、当前 `RoadNetwork` 和 B2/B3 参数生成 `RouteAnimationTimeline`，支持 `state_at(time_hour)` 查询队伍移动、停留、完成状态和已染色边段。
+- `mm_final.visualization.rendering`：延迟导入 Matplotlib 和 ImageIO，支持 PNG、GIF 和无声 MP4 导出；第一版边几何为节点间直线。
+- `mm_final.visualization.exports`：提供严格 B3 final 门禁、版本锁定信息、`timeline-summary.json`、`route-summary.csv` 和 README 导出；旧契约结果默认拒绝进入正式导出。
+- `apps/gui/route_animation_player.py`：提供无 GUI 重依赖的路线动画导出入口，后续 PySide6/Qt 播放器复用同一套 timeline 和 renderer。
 
 ### 潜在交互需求
 
