@@ -457,26 +457,28 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 
 目标：
 
-- 在结果契约和评价审计口径稳定后，负责报告图、路线过程动态展示、GIF/无声视频导出和轻量 GUI。
-- 第一版先建立可复用的路线动画时间轴和渲染导出核心，再用 GUI 播放器复用同一套时间轴。
+- 在结果契约和评价审计口径稳定后，负责报告图、路线过程动态展示、GIF/无声视频导出和 GUI。
+- 第一版先建立可复用的路线动画时间轴和渲染导出核心，再用 GUI 播放器复用同一套时间轴；下一阶段 B8c 将升级为覆盖题目选择、参数调整、算法选择、求解触发、审计诊断、方案比较、动画展示和结果导出的全栈问题解决器。
 - GUI 只负责文件加载、参数输入、求解触发、路线播放、图表展示和结果导出，不承载核心数学逻辑。
 
 已确认口径：
 
 - B8 先走 `shared/viz-dependencies` 增加可视化可选依赖，再走 `b/route-animation-visualization` 实现动画与 GUI；不得直接在 `main` 上实现。
-- B8 拆成 B8a 和 B8b：B8a 做 `mm_final.visualization` 中的时间轴模型、任意时刻快照、帧渲染、GIF/视频导出、报告图、表格和 README 导出；B8b 做 `apps/` 下的 GUI 播放器。
+- B8 拆成 B8a、B8b 和 B8c：B8a 做 `mm_final.visualization` 中的时间轴模型、任意时刻快照、帧渲染、GIF/视频导出、报告图、表格和 README 导出；B8b 做 `apps/` 下的 GUI 播放器；B8c 把 GUI 升级为全栈问题解决器。
 - B8a 新增 `RouteAnimationTimeline` 或等价结构，提供 `state_at(time_hour)`；时间轴内部使用模型小时，默认播放比例为真实播放 1 秒代表模型时间 1 小时。
 - 动态展示按 B2/B3 复算的 `expanded_node_path` 推进：所有队伍从 `O` 出发，沿边按距离和速度线性插值移动，到达乡镇或村后停留 `T` 或 `t`，完成后返回 `O` 并保持可见。
 - 未经过路线初始为黑色或灰色，已经过边段染成对应队伍颜色，当前队伍用移动点展示；前三队默认红、黄、蓝，超过三队后使用色盲友好色板。
 - GUI 播放器必须支持加载方案、播放/暂停、拖动进度条、倍速、重置、路线显隐、GIF 导出和无声 MP4 导出；无声 MP4 采用 `imageio[ffmpeg]` / `imageio-ffmpeg`。
 - 坐标布局第一版采用手工转录直线图 layout JSON 作为优先布局，文件为 `data/processed/road_network_layout/original-map-layout.json`；自动布局只作为兜底。该布局第一版复原节点空间位置，动画边几何采用节点间直线；若后续展示必须沿人工折线移动，再扩展 edge polyline 布局。
 - B8 调用 B3-B7 现有入口重算指标、审计和报告数据；正式展示默认使用 B3 final 审计，candidate 审计只进入调试区。
-- 第一版只支持导入候选方案；A 线算法运行按钮置灰或标注待接入，并预留 `AlgorithmRunner` adapter，不在 B8 内实现搜索。
+- B8c 采用共享 `AlgorithmRunner` / `SolveJob` 契约接入 A 线算法；GUI 不直接绑定 A 线 solver 类、脚本输出或 `print()` 进度。
 - 旧契约或旧路网输出严格拒绝进入正式结果；无效候选只进入 GUI 调试区，报告区和正式比较默认隐藏。
 - B8 导出物必须记录 Git commit、路网 TSV SHA256、路线契约版本、输入文件路径和 B3 final 审计状态。
 - GUI 或导出入口发现 schema/data/contract mismatch 时必须在顶部摘要或 README 中显示醒目告警，不允许静默修复。
 - 当前阶段不修改 A 线算法代码；如后续发现 A 线源代码仍产生旧契约输出，先向工程师反馈并等待拍板。
 - 输出目录使用 `outputs/b8/<timestamp>/`，保存图、动画、表格和 README；默认不提交生成图、GIF 或视频，最终报告资产是否入库另行确认。
+- B8c 的后端边界是：GUI 可以收集参数、选择算法、触发任务、展示进度和组织导出，但数学求解、契约校验、审计、评价、下界证明、敏感性分析和计时应继续由后端模块提供。
+- B8c 已拍板采用按第 (1)-(4) 问分 Tab 的工作流入口；算法接入采用共享 `AlgorithmRunner` / `SolveJob` 契约；第一版主界面参数只开放 `T`、`t`、`v` 和 `k`；求解采用后台任务模式；结果采用候选方案池；GUI 只展示后端返回的数学结果，不自行拼装指标和结论。
 
 执行计划：
 
@@ -492,6 +494,7 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 10. 新增 B8a 单测：小图手算路线、停留段、位置插值、边内部分染色、layout JSON、PNG/GIF smoke 和正式路网 smoke。
 11. B8b 第一版 GUI：在 `apps/` 中创建播放器入口，加载 RoutePlan 和 layout，复用 timeline，提供播放/暂停、进度条、倍速、路线显隐、GIF 导出和无声 MP4 导出。
 12. B8b 验收：至少覆盖 GUI 入口可导入、timeline 加载不崩溃、手动拖动时图像更新；交互细节以人工验收为主。
+13. B8c 开工前继续拍板候选池契约细节和结果导出边界；涉及公共契约时先走 `shared/...` 分支。
 
 完成标准：
 
@@ -506,6 +509,7 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 已实现 `RouteAnimationTimeline.state_at(time_hour)`、严格 B3 final 门禁、PNG/GIF/无声 MP4 导出、README/CSV/JSON 导出和数据版本锁定。
 - 已新增 `apps/gui/route_animation_player.py` 作为第一版无 GUI 重依赖入口；它只调用 B8 后端，不触发 A 线算法。
 - 已新增 `apps/gui/route_animation_gui.py` 作为 B8b PySide6/Qt 拖动播放器；它复用当前 timeline 和 renderer，支持加载方案、播放/暂停、重置、拖动进度条、倍速、路线显隐、GIF/无声 MP4 导出和 B3 final 诊断展示。
+- B8c 尚未实现；当前 GUI 仍是 B8b 播放器阶段。
 
 ## 4. A/B 握手点
 

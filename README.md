@@ -2,11 +2,11 @@
 
 本项目用于完成县域乡镇村道路巡检路线优化建模任务。核心资料见 `docs/task.md` 与 `docs/theories.md`。
 
-当前仓库处于工程初始化阶段：先沉淀目录结构、协作协议、原始数据入口与分阶段计划，再按 TDD 推进最小正确实现。
+当前仓库已完成工程初始化、路网公共底基、路线方案契约、A/B 线核心求解与 B8b 路线动画 GUI 的阶段性实现；后续重点转向 GUI 问题解决器、结果打磨、报告资产和展示支撑。
 
-## GUI 路线动画播放器
+## GUI 当前入口
 
-B8b 提供 PySide6/Qt GUI，用于加载已有 `RoutePlan` JSON，播放路线巡视过程，并导出 GIF 或无声 MP4。GUI 只做展示和导出，不运行 A 线搜索算法。
+B8b 当前提供的是 PySide6/Qt 路线动画播放器：用于加载已有 `RoutePlan` JSON，播放路线巡视过程，并导出 GIF 或无声 MP4。它是可视化入口，不是完整问题解决器；B8c 将升级为覆盖题目选择、参数调整、算法选择、求解触发、审计诊断、图表展示和结果导出的全栈 GUI。
 
 首次使用先同步可视化和 GUI 依赖：
 
@@ -17,12 +17,14 @@ uv sync --extra viz --extra gui
 启动空白播放器：
 
 ```powershell
+$env:PYTHONPATH = "src"
 .\.venv\Scripts\python.exe -m apps.gui.route_animation_gui
 ```
 
 也可以启动时直接加载一个路线方案：
 
 ```powershell
+$env:PYTHONPATH = "src"
 .\.venv\Scripts\python.exe -m apps.gui.route_animation_gui tests\fixtures\route_plans\full-coverage-smoke-001.json
 ```
 

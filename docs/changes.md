@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-06-14  明确 B8c GUI 全栈问题解决器方向
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：README 仍描述工程初始化阶段，GUI 启动命令缺少 `PYTHONPATH=src`；同时 B8b 当前 GUI 标题和能力是路线动画播放器，不能代表用户要求的完整问题解决器。
+- **解决方案**：
+  - 更新 README，说明当前 GUI 是 B8b 路线动画播放器，并把 B8c 定位为题目选择、参数调整、算法选择、求解触发、审计诊断、图表展示和结果导出的全栈问题解决器。
+  - 修正 README 中 PySide6/Qt GUI 的 PowerShell 启动命令，显式设置 `$env:PYTHONPATH = "src"`。
+  - 在 `docs/context.md` 新增“GUI 全栈问题解决器”术语，明确 GUI 只编排后端能力，不承载核心数学逻辑。
+  - 在 B 线详细计划和总实施计划中把 B8c 设置为升级 GUI 至全栈问题解决器，并记录涉及公共契约时需先走 `shared/...` 分支。
+  - 记录 B8c 已拍板的第一批交互决策：按第 (1)-(4) 问分 Tab、第一版主界面只开放 `T/t/v/k`、后台任务求解、候选方案池、多后端结果展示。
+  - 新增 `docs/contracts/gui-solver-contract.md` 和 `mm_final.solving` 共享求解 runner 契约，实现 `SolveJob`、`SolveParameters`、`SolveEvent`、`CancelToken`、`SolveCandidate`、`SolveResult` 和 `DefaultAlgorithmRunner`。
+- **影响文件**：`README.md`、`docs/context.md`、`docs/contracts/gui-solver-contract.md`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/changes.md`、`src/mm_final/solving/`、`tests/test_solver_runner.py`。
+
+---
+
 ## 2026-06-13  实现 B8b PySide6 路线动画播放器
 
 - **版本号**：未发布，仍处于第一个可行版本前。
