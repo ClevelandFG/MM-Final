@@ -154,6 +154,7 @@ class RouteAnimationWindow(QMainWindow):
         self._last_tick = time.monotonic()
         self._syncing_slider = False
         self.route_checkboxes: dict[str, QCheckBox] = {}
+        self.current_frame_pixmap: Optional[QPixmap] = None
         self.problem_controls: dict[str, dict[str, Any]] = {}
         self.solve_results: list[SolveResult] = []
         self.candidate_plan_paths: dict[str, Path] = {}
@@ -174,6 +175,10 @@ class RouteAnimationWindow(QMainWindow):
             self.cancel_token.request_cancel()
         self.temp_dir.cleanup()
         super().closeEvent(event)
+
+    def resizeEvent(self, event):  # noqa: N802 - Qt 命名约定
+        super().resizeEvent(event)
+        self._rescale_current_frame()
 
     def _build_ui(self) -> None:
         central = QWidget()
@@ -213,10 +218,11 @@ class RouteAnimationWindow(QMainWindow):
         self.image_label = QLabel("加载合法 RoutePlan 后显示动画帧")
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setMinimumSize(760, 500)
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(self.image_label)
-        image_panel.addWidget(scroll, 1)
+        self.image_scroll = QScrollArea()
+        self.image_scroll.setWidgetResizable(True)
+        self.image_scroll.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.image_scroll.setWidget(self.image_label)
+        image_panel.addWidget(self.image_scroll, 1)
 
         control_row = QHBoxLayout()
         self.play_button = QPushButton("播放")
@@ -406,8 +412,26 @@ class RouteAnimationWindow(QMainWindow):
             options=RenderOptions(visible_route_ids=self.visible_route_ids()),
         )
         pixmap = QPixmap(str(frame_path))
-        self.image_label.setPixmap(pixmap)
-        self.image_label.resize(pixmap.size())
+        self._show_frame_pixmap(pixmap)
+
+    def _show_frame_pixmap(self, pixmap: QPixmap) -> None:
+        self.current_frame_pixmap = pixmap
+        self._rescale_current_frame()
+
+    def _rescale_current_frame(self) -> None:
+        if not hasattr(self, "image_scroll"):
+            return
+        if self.current_frame_pixmap is None or self.current_frame_pixmap.isNull():
+            return
+        viewport_size = self.image_scroll.viewport().size()
+        if viewport_size.width() <= 0 or viewport_size.height() <= 0:
+            return
+        scaled = self.current_frame_pixmap.scaled(
+            viewport_size,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self.image_label.setPixmap(scaled)
 
     def _road_network(self):
         if self.road_network is not None:
@@ -572,6 +596,7 @@ class RouteAnimationWindow(QMainWindow):
         self.warning_label.setText(f"CONTRACT MISMATCH: {exc}")
         self.warning_label.setStyleSheet("padding: 8px; background: #ffe1e1; color: #8a0000; font-weight: bold;")
         self.image_label.setText("方案未通过 B3 final，不能进入正式播放。")
+        self.current_frame_pixmap = None
         self.image_label.setPixmap(QPixmap())
         self.diagnostic_list.clear()
         if exc.audit_result is not None:

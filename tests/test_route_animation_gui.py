@@ -39,6 +39,9 @@ def test_route_animation_gui_loads_scrubs_renders_and_toggles_routes(qt_app):
         pixmap = window.image_label.pixmap()
         assert pixmap is not None
         assert not pixmap.isNull()
+        viewport_size = window.image_scroll.viewport().size()
+        assert pixmap.width() <= viewport_size.width()
+        assert pixmap.height() <= viewport_size.height()
 
         first_route_id, checkbox = next(iter(window.route_checkboxes.items()))
         checkbox.setChecked(False)

@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-06-14  修复 B8c GUI 地图自适应显示
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B8c GUI 左侧地图按 Matplotlib 导出的 PNG 原始尺寸显示，窗口或地图框尺寸不足时会裁掉底部或边缘，无法保证整张路网完整呈现。
+- **解决方案**：
+  - GUI 保留当前帧原始 `QPixmap`，显示时按地图框 `QScrollArea` 可视区域等比例缩放，并保持居中。
+  - 移除按原始 PNG 尺寸强制调整 `QLabel` 的行为，窗口 resize 时复用当前原始帧重新缩放，不重新计算数学状态或重新跑 Matplotlib 渲染。
+  - 补充 GUI smoke 测试，确认显示 pixmap 不超过地图框 viewport 尺寸。
+- **影响文件**：`apps/gui/route_animation_gui.py`、`tests/test_route_animation_gui.py`、`docs/changes.md`。
+
+---
+
 ## 2026-06-14  实现 B8c PySide6 GUI 全栈问题解决器
 
 - **版本号**：未发布，仍处于第一个可行版本前。
