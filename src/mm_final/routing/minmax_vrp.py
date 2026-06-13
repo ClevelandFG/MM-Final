@@ -63,7 +63,7 @@ class MinMaxVRP_Solver:
                 group_count=k,
                 objective_spec=spec,
                 time_limit_seconds=self.time_limit,
-                iterations=30,
+                iterations=20,
             )
             solution = solver.solve()
             score = score_candidate(solution, self.dm, spec)

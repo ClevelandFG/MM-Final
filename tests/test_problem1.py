@@ -33,7 +33,7 @@ class TestProblem1:
             group_count=3,
             objective_spec=spec,
             time_limit_seconds=600,
-            iterations=50
+            iterations=25
         )
         solution = solver.solve()
 

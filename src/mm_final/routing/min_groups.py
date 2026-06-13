@@ -80,7 +80,7 @@ class MinGroupsSolver:
                     group_count=k,
                     objective_spec=refine_spec,
                     time_limit_seconds=self.time_limit_seconds,
-                    iterations=80,
+                    iterations=40,
                 )
                 best_solution = refiner.solve()
                 return best_solution

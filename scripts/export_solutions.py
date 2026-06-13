@@ -1,10 +1,9 @@
-"""导出所有问题的最终方案为 RoutePlan JSON 文件"""
+"""导出所有问题的最终方案为 RoutePlan JSON 文件，并打印各问题求解时间"""
 import sys
 import json
 from pathlib import Path
 from dataclasses import asdict
 
-# 确保 src/ 可被导入
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from mm_final.network import load_road_network, REQUIRED_VISIT_NODES
@@ -40,7 +39,6 @@ def write_plan(plan, filename, out_dir):
 
 
 if __name__ == "__main__":
-    # 加载路网与距离矩阵
     network_result = load_road_network()
     network = network_result.network
     dm = DistanceMatrix.from_network(network)
@@ -52,6 +50,7 @@ if __name__ == "__main__":
     print("求解问题 (0)...")
     solver0 = BranchAndBoundTspSolver.from_distance_matrix(dm)
     sol0 = solver0.solve()
+    print(f"  耗时: {sol0.runtime_seconds:.2f} s")
     plan0 = candidate_to_route_plan(
         sol0,
         plan_id="single-optimal",
@@ -73,6 +72,7 @@ if __name__ == "__main__":
     )
     solver1 = MTSP_Solver(dm, group_count=3, objective_spec=spec1, time_limit_seconds=600, iterations=50)
     sol1 = solver1.solve()
+    print(f"  耗时: {sol1.runtime_seconds:.2f} s")
     plan1 = candidate_to_route_plan(
         sol1,
         plan_id="problem1-3groups",
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     solver2 = MinGroupsSolver(dm, T_hour=2.0, t_hour=1.0, speed_km_per_hour=35.0,
                               time_limit_hour=24.0, max_group_upper=8, time_limit_seconds=600)
     sol2 = solver2.solve()
+    print(f"  耗时: {sol2.runtime_seconds:.2f} s")
     plan2 = candidate_to_route_plan(
         sol2,
         plan_id="problem2-min-groups",
@@ -105,6 +106,7 @@ if __name__ == "__main__":
     solver3 = MinMaxVRP_Solver(dm, T_hour=2.0, t_hour=1.0, speed_km_per_hour=35.0,
                                time_limit_seconds=600, max_group_upper=8)
     sol3 = solver3.solve()
+    print(f"  耗时: {sol3.runtime_seconds:.2f} s")
     plan3 = candidate_to_route_plan(
         sol3,
         plan_id="problem3-minmax-time",

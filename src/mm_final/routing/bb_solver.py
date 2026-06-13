@@ -52,7 +52,7 @@ class BranchAndBoundTspSolver:
         best_tour = tour
         best_ub = ub
 
-        optimizer = SubgradientOptimizer(self.computer, max_iterations=200)
+        optimizer = SubgradientOptimizer(self.computer, max_iterations=80, halve_after=15)
         root_lb, root_result, root_pi = optimizer.optimize(ub=float('inf'))
 
         if root_result.is_tour and root_result.lower_bound < best_ub:
