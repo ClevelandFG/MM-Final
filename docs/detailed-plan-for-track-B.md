@@ -773,7 +773,7 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 
 ### 目标
 
-负责项目后续 GUI 与可视化交付。B8 的第一版不是单纯静态报告图，而是先建立可复用的 **路线动画时间轴 + 渲染导出核心**，再用轻量 GUI 播放器复用同一套时间轴。B8c 的下一阶段目标是把 GUI 从“路线动画播放器”升级为 **GUI 全栈问题解决器**，让用户能在同一个入口中选择题目、设置参数、选择算法、触发求解、查看审计诊断、比较方案、播放路线动画并导出结果。
+负责项目后续 GUI 与可视化交付。B8 的第一版不是单纯静态报告图，而是先建立可复用的 **路线动画时间轴 + 渲染导出核心**，再用轻量 GUI 播放器复用同一套时间轴。B8c 已把 GUI 从“路线动画播放器”升级为 **GUI 全栈问题解决器**，让用户能在同一个入口中选择题目、设置参数、选择算法、触发求解、查看审计诊断、比较方案、播放路线动画并导出结果。
 
 核心体验目标为：根据 `RoutePlan` 在 GUI 中展示多组巡视队的动态推进过程，默认用真实播放 1 秒代表模型时间 1 小时；巡视队用彩色移动点在线路上移动，未经过路线保持黑色或灰色，已经过线段染成对应队伍颜色；用户可拖动进度条查看任意模型时刻，并能导出 GIF 和无声 MP4。无声 MP4 采用 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线。
 
@@ -890,8 +890,7 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 - `mm_final.visualization.rendering`：延迟导入 Matplotlib 和 ImageIO，支持 PNG、GIF 和无声 MP4 导出；第一版边几何为节点间直线。
 - `mm_final.visualization.exports`：提供严格 B3 final 门禁、版本锁定信息、`timeline-summary.json`、`route-summary.csv` 和 README 导出；旧契约结果默认拒绝进入正式导出。
 - `apps/gui/route_animation_player.py`：提供无 GUI 重依赖的路线动画导出入口。
-- `apps/gui/route_animation_gui.py`：提供 B8b PySide6/Qt 路线动画播放器，复用同一套 timeline 和 renderer，支持加载、播放/暂停、拖动进度条、倍速、路线显隐、GIF/无声 MP4 导出和 B3 final 诊断展示。
-- B8c 尚未实现；当前 GUI 标题和能力仍反映 B8b 播放器阶段，不代表最终 GUI 目标。
+- `apps/gui/route_animation_gui.py`：提供 B8c PySide6/Qt GUI 全栈问题解决器，复用同一套 timeline 和 renderer，并通过共享 `AlgorithmRunner` / `SolveJob` 契约支持第 (1)-(3) 问后台求解、候选方案池、第 (4) 问参数敏感性分析、加载方案、播放/暂停、拖动进度条、倍速、路线显隐、GIF/无声 MP4 导出和 B3 final 诊断展示。
 
 ### 潜在交互需求
 

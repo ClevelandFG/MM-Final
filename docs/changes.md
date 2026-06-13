@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-06-14  实现 B8c PySide6 GUI 全栈问题解决器
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B8b GUI 仍是路线动画播放器，不能直接让用户按题目配置参数、选择算法、触发求解、比较候选和运行参数敏感性分析。
+- **解决方案**：
+  - 将 `apps/gui/route_animation_gui.py` 升级为 B8c GUI 全栈问题解决器，窗口标题更新为 `B8c Road Problem Solver`。
+  - GUI 按第 (1)-(4) 问分 Tab，前三问通过共享 `AlgorithmRunner` / `SolveJob` 契约后台运行后端 solver，第四问复用候选方案池调用 B7 参数敏感性分析。
+  - 主界面开放 `T`、`t`、`v` 和 `k` 控件，支持算法选择、后台进度、取消请求、候选方案池、候选加载、B3 final 诊断、路线显隐、GIF/MP4 和 README/表格导出。
+  - 更新 README、应用说明和 B8 计划文档，说明当前 GUI 已从播放器升级为问题解决器。
+- **影响文件**：`README.md`、`apps/README.md`、`apps/gui/route_animation_gui.py`、`tests/test_route_animation_gui.py`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/changes.md`。
+
+---
+
 ## 2026-06-14  明确 B8c GUI 全栈问题解决器方向
 
 - **版本号**：未发布，仍处于第一个可行版本前。

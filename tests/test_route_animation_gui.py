@@ -46,3 +46,28 @@ def test_route_animation_gui_loads_scrubs_renders_and_toggles_routes(qt_app):
         assert first_route_id not in window.visible_route_ids()
     finally:
         window.close()
+
+
+def test_b8c_problem_solver_tabs_build_solve_job(qt_app):
+    window = RouteAnimationWindow()
+    try:
+        assert window.windowTitle() == "B8c Road Problem Solver"
+        assert window.problem_tabs.count() == 4
+        assert set(window.problem_controls) == {"fixed_groups", "minimum_groups", "unlimited_personnel"}
+
+        controls = window.problem_controls["fixed_groups"]
+        controls["T_hour"].setValue(2.5)
+        controls["t_hour"].setValue(1.5)
+        controls["speed_km_per_hour"].setValue(40.0)
+        controls["group_count"].setValue(4)
+
+        job = window._build_solve_job("fixed_groups")
+
+        assert job.problem_kind == "fixed_groups"
+        assert job.algorithm_id == "default"
+        assert job.parameters.T_hour == pytest.approx(2.5)
+        assert job.parameters.t_hour == pytest.approx(1.5)
+        assert job.parameters.speed_km_per_hour == pytest.approx(40.0)
+        assert job.parameters.group_count == 4
+    finally:
+        window.close()
