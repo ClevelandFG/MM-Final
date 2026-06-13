@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-06-13  实现 B8b PySide6 路线动画播放器
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B8a 已能导出路线动画包，但还缺少可交互播放器，无法在 GUI 中加载方案、播放/暂停、拖动进度条、查看任意模型时刻、控制路线显隐并直接导出 GIF/无声 MP4。
+- **解决方案**：
+  - 新增 `apps/gui/route_animation_gui.py`，实现 PySide6/Qt 路线动画播放器，复用 `mm_final.visualization` 的 timeline、layout、B3 final 门禁和 Matplotlib/ImageIO 渲染后端。
+  - GUI 支持加载 `RoutePlan` JSON、播放/暂停、重置、拖动进度条、倍速播放、路线组显隐、当前帧渲染、GIF 导出、无声 MP4 导出和 README/表格导出。
+  - GUI 对未通过 B3 final 的方案显示醒目的 `CONTRACT MISMATCH` 告警，不让旧契约或非法路线进入正式播放。
+  - `RenderOptions` 新增 `visible_route_ids`，使 GUI 路线显隐和导出动画使用同一套渲染口径。
+  - `pyproject.toml` 新增 `gui` optional extra，包含 `PySide6`，并同步 `uv.lock`。
+  - 新增 B8b GUI smoke 测试，在 Qt offscreen 模式下覆盖加载、拖动到中间时刻、图像渲染和路线显隐。
+- **影响文件**：`apps/gui/route_animation_gui.py`、`apps/README.md`、`src/mm_final/visualization/rendering.py`、`tests/test_route_animation_gui.py`、`pyproject.toml`、`uv.lock`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/environment-and-dependencies.md`、`docs/changes.md`。
+
+---
+
 ## 2026-06-13  沉淀 B8 兼容、版本锁定与开工边界
 
 - **版本号**：未发布，仍处于第一个可行版本前。

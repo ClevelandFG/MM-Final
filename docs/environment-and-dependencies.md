@@ -38,7 +38,7 @@
 
 - 后端继续负责数学状态、参数校验、方法执行、IO 和计时。
 - GUI 只负责文件加载、参数输入、求解触发、路线播放、图表展示和结果导出。
-- B8b 第一版 GUI 需要支持可拖动进度条和逐帧动画播放，优先评估 PySide6/Qt 一类桌面播放器；Streamlit 保留给后续报告查看器或轻量仪表盘，不作为第一版路线动画播放器首选。
+- B8b 第一版 GUI 需要支持可拖动进度条和逐帧动画播放，已采用 PySide6/Qt 桌面播放器；Streamlit 保留给后续报告查看器或轻量仪表盘，不作为第一版路线动画播放器首选。
 
 ### 1.4 核心算法依赖
 
@@ -73,7 +73,7 @@
 
 ### 1.7 可视化依赖栈
 
-采用 Matplotlib + NetworkX + Pillow/ImageIO + Plotly 的组合；MP4 导出采用 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线，GUI 框架依赖暂不锁死。
+采用 Matplotlib + NetworkX + Pillow/ImageIO + Plotly 的组合；MP4 导出采用 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线，B8b GUI 播放器采用 PySide6/Qt。
 
 执行含义：
 
@@ -81,7 +81,7 @@
 - Pillow/ImageIO 用于优先支持 GIF、逐帧图像导出和视频帧写入。
 - Plotly 用于后续交互式图表和网络图展示，例如路线组开关、悬停查看节点信息、瓶颈路线高亮。
 - Streamlit 暂不作为初始依赖；如后续需要轻量 Web 报告查看器，再放入 `gui` 可选依赖组。
-- PySide6/Qt 暂不作为初始依赖；若 B8b 最终确认采用桌面播放器，再放入 `gui` 可选依赖组。
+- PySide6/Qt 已放入 `gui` 可选依赖组，仅用于 B8b 桌面播放器，不进入核心算法依赖。
 - 无声 MP4 已确认为需求，采用 `imageio[ffmpeg]` / `imageio-ffmpeg`，避免第一版直接依赖系统级 FFmpeg 或 PyAV。
 
 ### 1.8 可选依赖分组
@@ -90,7 +90,7 @@
 
 - 主依赖：核心建模、算法和审计所需依赖，例如 `networkx`、`numpy`、`scipy`。
 - `viz`：报告图、基础动画、GIF 和无声 MP4 导出相关依赖，例如 `matplotlib`、`pillow`、`imageio`、`imageio[ffmpeg]` 或 `imageio-ffmpeg`，Plotly 可在交互图阶段加入。
-- `gui`：轻量 GUI 相关依赖，例如后续可能加入的 `PySide6` 或 `streamlit`。
+- `gui`：轻量 GUI 相关依赖，当前包含 B8b 播放器所需的 `PySide6`；`streamlit` 仍后置评估。
 - `video` 扩展项可后置；第一版若不单列 `video`，则把 `imageio[ffmpeg]` / `imageio-ffmpeg` 放入 `viz` optional extra。
 - `dev`：测试、格式化、类型检查等开发依赖。
 
@@ -191,4 +191,4 @@
 
 - 更贴近 B8b 的路线动画播放器需求。
 - 依赖体积比纯可视化库更重，只能作为 `gui` 可选依赖，不能进入核心算法依赖。
-- 第一版若采用 PySide6，应保持 GUI 只消费 `mm_final.visualization` 的 timeline 和 frame renderer，不在 GUI 内写数学逻辑。
+- B8b 第一版已采用 PySide6；GUI 只消费 `mm_final.visualization` 的 timeline 和 frame renderer，不在 GUI 内写数学逻辑。

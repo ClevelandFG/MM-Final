@@ -505,7 +505,7 @@ B 线主责是“判断方案是否成立、为什么成立或不成立”。它
 - 已新增 `mm_final.visualization` 包，覆盖 layout、timeline、rendering 和 exports 四层。
 - 已实现 `RouteAnimationTimeline.state_at(time_hour)`、严格 B3 final 门禁、PNG/GIF/无声 MP4 导出、README/CSV/JSON 导出和数据版本锁定。
 - 已新增 `apps/gui/route_animation_player.py` 作为第一版无 GUI 重依赖入口；它只调用 B8 后端，不触发 A 线算法。
-- 尚未实现完整 PySide6/Qt 拖动播放器；后续 B8b 可在当前 timeline 和 renderer 之上封装。
+- 已新增 `apps/gui/route_animation_gui.py` 作为 B8b PySide6/Qt 拖动播放器；它复用当前 timeline 和 renderer，支持加载方案、播放/暂停、重置、拖动进度条、倍速、路线显隐、GIF/无声 MP4 导出和 B3 final 诊断展示。
 
 ## 4. A/B 握手点
 

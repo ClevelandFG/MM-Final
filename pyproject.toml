@@ -18,7 +18,9 @@ viz = [
   "imageio[ffmpeg]>=2.34",
   "imageio-ffmpeg>=0.4.9",
 ]
-gui = []
+gui = [
+  "PySide6>=6.7",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

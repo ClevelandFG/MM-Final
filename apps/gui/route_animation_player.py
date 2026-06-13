@@ -2,7 +2,7 @@
 
 第一版是无 GUI 依赖的轻量播放器/导出器骨架：负责加载 RoutePlan、
 调用 `mm_final.visualization` 后端并写出 README、表格、帧和动画文件。
-后续 PySide6/Qt 播放器应复用同一套后端。
+PySide6/Qt 播放器复用同一套后端。
 """
 
 from __future__ import annotations

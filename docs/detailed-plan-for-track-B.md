@@ -872,8 +872,8 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 8. 实现 GIF 与无声 MP4 导出：按播放比例和 fps 逐帧调用同一渲染函数，验证首末帧不同、文件非空；MP4 通过 ImageIO/`imageio-ffmpeg` 写入。
 9. 实现表格和 README 导出：记录输入路径、参数、审计状态、播放比例、fps、输出文件和复现命令。
 10. 新增 B8a 单测：小图手算路线、停留段、插值位置、染色段、layout JSON、PNG/GIF smoke。
-11. B8b 第一版 GUI：在 `apps/` 中创建播放器入口，加载 RoutePlan 和 layout，复用 timeline，提供播放/暂停、进度条、倍速、路线显隐和 GIF 导出。
-12. B8b smoke 测试：至少覆盖 GUI 入口可导入、timeline 加载不崩溃；交互细节以手工验收为主。
+11. B8b 第一版 GUI：在 `apps/` 中创建播放器入口，加载 RoutePlan 和 layout，复用 timeline，提供播放/暂停、进度条、倍速、路线显隐、GIF 导出和无声 MP4 导出。
+12. B8b smoke 测试：至少覆盖 GUI 入口可导入、timeline 加载不崩溃、拖动进度条时图像更新、路线显隐状态可读；交互细节以手工验收为主。
 
 ### 已落地实现切片
 
@@ -881,7 +881,8 @@ B7 第一版定位为“参数情景审计与敏感性报告层”，不是 A �
 - `mm_final.visualization.timeline`：根据 `RoutePlan`、当前 `RoadNetwork` 和 B2/B3 参数生成 `RouteAnimationTimeline`，支持 `state_at(time_hour)` 查询队伍移动、停留、完成状态和已染色边段。
 - `mm_final.visualization.rendering`：延迟导入 Matplotlib 和 ImageIO，支持 PNG、GIF 和无声 MP4 导出；第一版边几何为节点间直线。
 - `mm_final.visualization.exports`：提供严格 B3 final 门禁、版本锁定信息、`timeline-summary.json`、`route-summary.csv` 和 README 导出；旧契约结果默认拒绝进入正式导出。
-- `apps/gui/route_animation_player.py`：提供无 GUI 重依赖的路线动画导出入口，后续 PySide6/Qt 播放器复用同一套 timeline 和 renderer。
+- `apps/gui/route_animation_player.py`：提供无 GUI 重依赖的路线动画导出入口。
+- `apps/gui/route_animation_gui.py`：提供 B8b PySide6/Qt 路线动画播放器，复用同一套 timeline 和 renderer，支持加载、播放/暂停、拖动进度条、倍速、路线显隐、GIF/无声 MP4 导出和 B3 final 诊断展示。
 
 ### 潜在交互需求
 

@@ -34,6 +34,7 @@ class RenderOptions:
     show_edge_labels: bool = False
     title: Optional[str] = None
     route_colors: tuple[str, ...] = DEFAULT_ROUTE_COLORS
+    visible_route_ids: Optional[frozenset[str]] = None
 
 
 def render_snapshot_png(
@@ -51,7 +52,8 @@ def render_snapshot_png(
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     snapshot = timeline.state_at(timeline.completion_time_hour if time_hour is None else time_hour)
-    route_colors = _route_color_map(timeline.segments_by_route_id.keys(), options.route_colors)
+    visible_route_ids = _visible_route_ids(timeline.segments_by_route_id.keys(), options.visible_route_ids)
+    route_colors = _route_color_map(visible_route_ids, options.route_colors)
 
     fig, ax = plt.subplots(figsize=(options.width_inch, options.height_inch), dpi=options.dpi)
     graph = road_network.to_networkx()
@@ -193,6 +195,8 @@ def _draw_progress_edges(
     route_colors: Mapping[str, str],
 ) -> None:
     for item in progress_items:
+        if item.route_id not in route_colors:
+            continue
         source = layout.require_node(item.source)
         target = layout.require_node(item.target)
         end_x = source.x + (target.x - source.x) * item.progress
@@ -216,6 +220,8 @@ def _draw_nodes(ax, nodes: Sequence[str], layout: RoadNetworkLayout) -> None:
 
 def _draw_team_markers(ax, snapshot, layout: RoadNetworkLayout, route_colors: Mapping[str, str]) -> None:
     for state in snapshot.team_states:
+        if state.route_id not in route_colors:
+            continue
         color = route_colors[state.route_id]
         if state.edge is not None:
             source = layout.require_node(state.edge[0])
@@ -241,6 +247,13 @@ def _node_style(node: str) -> tuple[str, str, int]:
 
 def _route_color_map(route_ids, colors: tuple[str, ...]) -> dict[str, str]:
     return {route_id: colors[index % len(colors)] for index, route_id in enumerate(route_ids)}
+
+
+def _visible_route_ids(route_ids, configured: Optional[frozenset[str]]) -> tuple[str, ...]:
+    all_route_ids = tuple(route_ids)
+    if configured is None:
+        return all_route_ids
+    return tuple(route_id for route_id in all_route_ids if route_id in configured)
 
 
 def _import_matplotlib_pyplot():
