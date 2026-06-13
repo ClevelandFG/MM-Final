@@ -8,7 +8,7 @@
 
 1. **先契约，后算法**：任何路线构造方法都必须输出统一结构；任何审计方法都必须只依赖统一结构。
 2. **单位显式**：距离统一为 `km`，时间统一为 `hour`，速度统一为 `km_per_hour`。
-3. **节点语义固定**：`O` 是县政府所在地；`A`–`R` 中除 `O` 外的大写字母是乡镇；`1`–`35` 是村；`U01`–`U05` 是辅助道路节点。
+3. **节点语义固定**：`O` 是县政府所在地；`A`–`R` 中除 `O` 外的大写字母是乡镇；`1`–`35` 是村；`U1`–`U6` 是辅助道路节点。
 4. **必访点与通行点分离**：路线的必访顺序只包含乡镇和村；展开路径可以包含辅助道路节点。
 5. **审计可复现**：每个方案必须保留算法名、参数、随机种子和契约版本。
 
@@ -21,7 +21,7 @@
 
 因此，一条路线在现实中必须从 `O` 出发并最终回到 `O`，但 `O` 不写入 `required_visit_order`。`O` 的出发和返回语义由 `depot = "O"` 以及 `expanded_node_path` 的首尾节点表达。
 
-辅助道路节点 `U01`–`U05` 只能出现在 `expanded_node_path` 中，不能出现在 `required_visit_order` 中，因为它们不是巡视对象，不产生乡镇或村停留时间。
+辅助道路节点 `U1`–`U6` 只能出现在 `expanded_node_path` 中，不能出现在 `required_visit_order` 中，因为它们不是巡视对象，不产生乡镇或村停留时间。
 
 示例：
 
@@ -29,11 +29,11 @@
 {
   "depot": "O",
   "required_visit_order": ["A", "3"],
-  "expanded_node_path": ["O", "U01", "A", "U01", "3", "O"]
+  "expanded_node_path": ["O", "U1", "A", "U1", "3", "O"]
 }
 ```
 
-上例表示实际通行路径为 `O -> U01 -> A -> U01 -> 3 -> O`，但真正的必访停留顺序只有 `A -> 3`。
+上例表示实际通行路径为 `O -> U1 -> A -> U1 -> 3 -> O`，但真正的必访停留顺序只有 `A -> 3`。
 
 ## 1.2 统一路网实现标准
 
@@ -44,7 +44,7 @@ A/B 两线必须遵守：
 - 统一从 `data/raw/road_network.tsv` 读取正式道路网络；测试和扩展场景可以显式传入自定义 TSV 路径。
 - 统一使用 `mm_final.network.RoadNetwork` 表示道路网络，不得在 A 线或 B 线功能分支中另起一套公共路网语义。
 - 统一使用 `mm_final.network.nodes.NodeType`、`classify_node()`、`TOWN_NODES`、`VILLAGE_NODES`、`AUXILIARY_NODES`、`REQUIRED_VISIT_NODES` 等节点语义。
-- `O` 固定为 depot，不属于乡镇；`A`–`R` 中除 `O` 外为乡镇；`1`–`35` 为村；`U01`–`U05` 为辅助道路节点。
+- `O` 固定为 depot，不属于乡镇；`A`–`R` 中除 `O` 外为乡镇；`1`–`35` 为村；`U1`–`U6` 为辅助道路节点。
 - 正式 TSV 必须通过表头、三列、正边权、无未知节点、无重复无向边、必访节点存在、整图连通等校验。
 
 因此，A 线输出 `RoutePlan` 时，`required_visit_order`、`expanded_node_path` 和距离字段必须能被 B 线基于同一个 `RoadNetwork` 复算。若 A 线发现需要修改节点集合、路网读取、最短路公共接口或路线方案字段，必须先走 `shared/...` 分支更新公共标准、契约文档和测试。
@@ -90,7 +90,7 @@ A/B 两线必须遵守：
 
 - `expanded_node_path` 若存在，首尾必须都是 `O`。
 - `required_visit_order` 不写首尾 `O`，也不得在中间写入 `O`；若出现 `O`，应视为契约错误。
-- `required_visit_order` 只能包含乡镇节点和村节点；若出现 `U01`–`U05` 等辅助道路节点，应视为契约错误。
+- `required_visit_order` 只能包含乡镇节点和村节点；若出现 `U1`–`U6` 等辅助道路节点，应视为契约错误。
 - 若 `expanded_node_path` 暂缺，B 线可以基于 `required_visit_order` 和最短路闭包复算展开路径。
 - `expanded_node_path`、`distance_km`、`metrics` 等 nullable 字段暂缺值时写为 `null`，但字段本身不得省略。
 
@@ -153,7 +153,7 @@ A/B 两线必须遵守：
 | `warnings` | list[string] | 不阻断但需要关注的问题 |
 | `recomputed_metrics` | PlanMetrics | B 线复算后的全方案指标 |
 
-审计器必须给出具体错误原因，例如“村节点 `12` 未覆盖”“辅助节点 `U03` 出现在必访顺序中”“路线 `R2` 未返回 `O`”。
+审计器必须给出具体错误原因，例如“村节点 `12` 未覆盖”“辅助节点 `U3` 出现在必访顺序中”“路线 `R2` 未返回 `O`”。
 
 ## 7. 最小样例
 

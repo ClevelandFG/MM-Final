@@ -32,13 +32,13 @@
 
 ### 1.3 GUI 策略
 
-GUI 不作为第一阶段目标。先完成命令行、数据输出和报告图；后续需要展示时，优先考虑轻量 Web GUI。
+核心算法阶段不以 GUI 为第一目标。先完成命令行、数据输出、审计报告和可复用可视化后端；B8 阶段再在该后端之上实现轻量 GUI 播放器。
 
 执行含义：
 
 - 后端继续负责数学状态、参数校验、方法执行、IO 和计时。
-- GUI 只负责参数输入、求解触发、路线展示、图表展示和结果导出。
-- 若后续采用 Web GUI，优先评估 Streamlit。
+- GUI 只负责文件加载、参数输入、求解触发、路线播放、图表展示和结果导出。
+- B8b 第一版 GUI 需要支持可拖动进度条和逐帧动画播放，优先评估 PySide6/Qt 一类桌面播放器；Streamlit 保留给后续报告查看器或轻量仪表盘，不作为第一版路线动画播放器首选。
 
 ### 1.4 核心算法依赖
 
@@ -73,32 +73,35 @@ GUI 不作为第一阶段目标。先完成命令行、数据输出和报告图�
 
 ### 1.7 可视化依赖栈
 
-采用 Matplotlib + NetworkX + Pillow/ImageIO + Plotly 的组合。
+采用 Matplotlib + NetworkX + Pillow/ImageIO + Plotly 的组合；MP4 导出采用 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线，GUI 框架依赖暂不锁死。
 
 执行含义：
 
 - Matplotlib + NetworkX 用于报告级静态路网图、路线组高亮图和基础动画。
-- Pillow/ImageIO 用于优先支持 GIF 或逐帧图像导出。
+- Pillow/ImageIO 用于优先支持 GIF、逐帧图像导出和视频帧写入。
 - Plotly 用于后续交互式图表和网络图展示，例如路线组开关、悬停查看节点信息、瓶颈路线高亮。
-- Streamlit 暂不作为初始依赖；如后续需要轻量 Web GUI，再放入 `gui` 可选依赖组。
-- FFmpeg 暂不作为必需依赖；如后续明确需要 MP4 或无声视频，再单独评估。
+- Streamlit 暂不作为初始依赖；如后续需要轻量 Web 报告查看器，再放入 `gui` 可选依赖组。
+- PySide6/Qt 暂不作为初始依赖；若 B8b 最终确认采用桌面播放器，再放入 `gui` 可选依赖组。
+- 无声 MP4 已确认为需求，采用 `imageio[ffmpeg]` / `imageio-ffmpeg`，避免第一版直接依赖系统级 FFmpeg 或 PyAV。
 
 ### 1.8 可选依赖分组
 
 后续 `pyproject.toml` 中依赖分组建议如下：
 
 - 主依赖：核心建模、算法和审计所需依赖，例如 `networkx`、`numpy`、`scipy`。
-- `viz`：报告图、交互图和动画导出相关依赖，例如 `matplotlib`、`plotly`、`pillow`、`imageio`。
-- `gui`：轻量 GUI 相关依赖，例如后续可能加入的 `streamlit`。
+- `viz`：报告图、基础动画、GIF 和无声 MP4 导出相关依赖，例如 `matplotlib`、`pillow`、`imageio`、`imageio[ffmpeg]` 或 `imageio-ffmpeg`，Plotly 可在交互图阶段加入。
+- `gui`：轻量 GUI 相关依赖，例如后续可能加入的 `PySide6` 或 `streamlit`。
+- `video` 扩展项可后置；第一版若不单列 `video`，则把 `imageio[ffmpeg]` / `imageio-ffmpeg` 放入 `viz` optional extra。
 - `dev`：测试、格式化、类型检查等开发依赖。
 
 ### 1.9 动态展示目标
 
-第一阶段动态展示目标为静态图 + GIF：
+第一阶段动态展示目标为路线动画时间轴 + 静态图 + GIF：
 
 - 静态图用于书面报告和阶段性检查。
+- 路线动画时间轴用于支撑 GUI 播放器、拖动进度条、任意时刻截图和导出动画。
 - GIF 用于直观看到路网巡视过程，优先服务上台展示和讨论。
-- MP4、无声视频和完整交互 GUI 后置。
+- 无声 MP4 用于 LaTeX 报告嵌入，依赖方案为 `imageio[ffmpeg]` / `imageio-ffmpeg`。
 
 ## 2. 待确认决策
 
@@ -122,7 +125,7 @@ GUI 不作为第一阶段目标。先完成命令行、数据输出和报告图�
 
 - 适合作为第一阶段报告图和路线过程动画的基础工具。
 - 对本项目规模足够。
-- 需要导出 MP4 时通常依赖 FFmpeg；导出 GIF 可优先考虑 Pillow writer。
+- 需要导出 MP4 时通常依赖 FFmpeg 可执行程序；导出 GIF 可优先考虑 Pillow writer。
 
 ### 3.2 NetworkX
 
@@ -159,7 +162,8 @@ GUI 不作为第一阶段目标。先完成命令行、数据输出和报告图�
 
 项目适配：
 
-- 适合作为后续 GUI 方案。
+- 适合作为后续报告查看器或轻量仪表盘方案。
+- 对“进度条拖动 + 帧级动画播放器 + 本地导出”的第一版 B8b 需求不是首选。
 - 不适合作为算法核心依赖。
 - 依赖链比 Matplotlib/NetworkX 更重，建议放入可选依赖组。
 
@@ -168,10 +172,23 @@ GUI 不作为第一阶段目标。先完成命令行、数据输出和报告图�
 定位：
 
 - Pillow/ImageIO 适合图片和 GIF 导出。
-- FFmpeg 适合 MP4 或更稳定的视频导出，但通常涉及系统级可执行文件。
+- FFmpeg 适合 MP4 或更稳定的视频导出，但可能涉及系统级可执行文件或 Python 包内置二进制。
 
 项目适配：
 
 - GIF 导出建议优先使用 Pillow 或 ImageIO。
-- MP4 导出建议后续再决定是否要求安装 FFmpeg。
-- 若只是上台展示，无声 GIF 可能已经足够。
+- MP4 导出选择 ImageIO `imageio[ffmpeg]` / `imageio-ffmpeg` 路线；Matplotlib `FFMpegWriter` + 系统 FFmpeg 和 PyAV 不作为第一版首选。
+- `imageio-ffmpeg` 依赖更接近 Python 环境内部管理，但仍应把视频导出测试设计成可跳过或最小 smoke，避免个别平台编码器不可用时阻塞核心测试。
+- MP4 默认应导出无声视频；只有调用方显式提供音频路径时才考虑音轨。
+
+### 3.6 PySide6 / Qt
+
+定位：
+
+- 适合实现桌面 GUI、播放控制、可拖动进度条和本地图像刷新。
+
+项目适配：
+
+- 更贴近 B8b 的路线动画播放器需求。
+- 依赖体积比纯可视化库更重，只能作为 `gui` 可选依赖，不能进入核心算法依赖。
+- 第一版若采用 PySide6，应保持 GUI 只消费 `mm_final.visualization` 的 timeline 和 frame renderer，不在 GUI 内写数学逻辑。

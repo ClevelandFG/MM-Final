@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-06-11  沉淀 B8 GUI 与动态可视化决策
+
+- **版本号**：未发布，仍处于第一个可行版本前。
+- **问题**：B8 需要同时支撑书面报告、路线动态展示、GIF/无声视频导出和后续 GUI，原先“静态图 + GIF + GUI 后置”的口径不足以覆盖可拖动进度条、按 1 秒代表 1 小时播放、队伍移动点、路线染色和导出动图等交互需求；同时需要明确 MP4 依赖和手工转录直线图布局复原方案。
+- **解决方案**：
+  - 在 `docs/detailed-plan-for-track-B.md` 的 B8 阶段沉淀 53 条已拍板决策，确认 B8 先走 `shared/viz-dependencies`，再走 `b/route-animation-visualization`。
+  - 确认 B8 拆成 B8a 和 B8b：B8a 负责 `RouteAnimationTimeline`、任意时刻快照、帧渲染、静态图、GIF、表格和 README 导出；B8b 负责 GUI 播放器。
+  - 确认动态展示默认真实播放 1 秒代表模型时间 1 小时，队伍沿 B2/B3 复算的 `expanded_node_path` 移动，未经过路线为黑色或灰色，经过线段染成对应队伍颜色，并支持拖动进度条查看任意时刻。
+  - 确认 GUI 模式按第 (1)-(4) 问组织，第一版只导入候选方案，不在 B8 内实现 A 线搜索；A 线算法运行按钮置灰或标注待接入，并预留 `AlgorithmRunner` adapter。
+  - 确认 B8 正式展示默认使用 B3 final 审计，展示层只调用 B3-B7 现有入口重算指标，不手写评价指标。
+  - 确认可视化坐标必须支持可持久化 layout JSON；手工转录直线图布局复原采用“直线图底图 + 半手工节点标注 + 归一化 layout JSON”方案，自动布局只作为兜底。
+  - 确认无声 MP4 已是需求，并选择 ImageIO 的 `imageio[ffmpeg]` / `imageio-ffmpeg` 路线；Matplotlib `FFMpegWriter` + 系统 FFmpeg 和 PyAV 不作为第一版首选。
+  - 新增 `data/processed/road_network_layout/straight-line-layout-source.png` 保存手工转录直线图底图源，仅用于可视化布局复原和人工复核，不参与距离或路径计算。
+  - 新增 `data/processed/road_network_layout/original-map-layout.json`，覆盖官方路网 59 个节点，保存半手工标注的归一化坐标和直线图像素锚点；第一版复原节点布局，不复原道路曲线。
+  - 新增 `tests/test_original_map_layout.py`，验证 layout JSON 覆盖官方路网节点、坐标在 `[0,1]` 范围内。
+  - 在 `docs/implementation-plan.md` 中把 B8 执行计划细化为 12 个步骤，覆盖依赖分支、可视化包、时间轴、布局、帧渲染、静态导出、GIF、README、测试和 GUI 播放器。
+  - 在 `docs/environment-and-dependencies.md` 中同步 GUI 与可视化依赖策略：Matplotlib/Pillow/ImageIO 先支撑 B8a，PySide6/Qt 优先评估 B8b 播放器，Streamlit 保留给后续报告查看器或轻量仪表盘，MP4 采用 `imageio[ffmpeg]` / `imageio-ffmpeg`。
+  - 在 `docs/context.md` 中补充路线动画时间轴、动画快照、可视化布局和题面直线图布局术语。
+- **影响文件**：`data/processed/road_network_layout/straight-line-layout-source.png`、`data/processed/road_network_layout/original-map-layout.json`、`data/README.md`、`tests/test_original_map_layout.py`、`docs/detailed-plan-for-track-B.md`、`docs/implementation-plan.md`、`docs/environment-and-dependencies.md`、`docs/context.md`、`docs/changes.md`。
+
 ## 2026-06-11  沉淀并实现 B7 参数敏感性分析
 
 - **版本号**：未发布，仍处于第一个可行版本前。

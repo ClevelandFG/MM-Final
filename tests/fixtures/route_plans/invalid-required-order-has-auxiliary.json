@@ -7,7 +7,7 @@
     {
       "route_id": "R1",
       "depot": "O",
-      "required_visit_order": ["A", "U01"],
+      "required_visit_order": ["A", "U1"],
       "expanded_node_path": null,
       "distance_km": null,
       "metrics": null
