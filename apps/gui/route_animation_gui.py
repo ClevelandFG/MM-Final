@@ -265,10 +265,19 @@ class RouteAnimationWindow(QMainWindow):
         self.candidate_list.currentItemChanged.connect(lambda current, _previous: self._load_candidate_item(current))
         side_panel.addWidget(self.candidate_list, 1)
         side_panel.addWidget(QLabel("路线显隐"))
+        self.route_list_scroll = QScrollArea()
+        self.route_list_scroll.setFrameShape(QFrame.NoFrame)
+        self.route_list_scroll.setWidgetResizable(True)
+        self.route_list_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.route_list_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.route_list_scroll.setMaximumHeight(58)
         self.route_list_widget = QWidget()
-        self.route_list_layout = QVBoxLayout(self.route_list_widget)
+        self.route_list_layout = QHBoxLayout(self.route_list_widget)
+        self.route_list_layout.setContentsMargins(4, 0, 4, 0)
+        self.route_list_layout.setSpacing(12)
         self.route_list_layout.addStretch(1)
-        side_panel.addWidget(self.route_list_widget)
+        self.route_list_scroll.setWidget(self.route_list_widget)
+        side_panel.addWidget(self.route_list_scroll)
         side_panel.addWidget(QLabel("审计诊断"))
         self.diagnostic_list = QListWidget()
         side_panel.addWidget(self.diagnostic_list, 1)
@@ -568,6 +577,7 @@ class RouteAnimationWindow(QMainWindow):
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
+        self.route_list_widget.setMinimumWidth(0)
         self.route_checkboxes.clear()
         if self.bundle is None:
             return
@@ -577,6 +587,7 @@ class RouteAnimationWindow(QMainWindow):
             checkbox.stateChanged.connect(lambda _state: self._render_current_frame())
             self.route_checkboxes[route_id] = checkbox
             self.route_list_layout.insertWidget(self.route_list_layout.count() - 1, checkbox)
+        self.route_list_widget.setMinimumWidth(self.route_list_layout.sizeHint().width())
 
     def _populate_diagnostics(self) -> None:
         self.diagnostic_list.clear()

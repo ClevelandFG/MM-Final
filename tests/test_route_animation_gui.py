@@ -7,7 +7,7 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
-from PySide6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtWidgets import QApplication, QHBoxLayout  # noqa: E402
 
 from apps.gui.route_animation_gui import RouteAnimationWindow  # noqa: E402
 
@@ -29,6 +29,8 @@ def test_route_animation_gui_loads_scrubs_renders_and_toggles_routes(qt_app):
         assert loaded is True
         assert window.bundle is not None
         assert window.route_checkboxes
+        assert isinstance(window.route_list_layout, QHBoxLayout)
+        assert window.route_list_scroll.maximumHeight() <= 58
         assert window.time_slider.maximum() == window.slider_scale
 
         completion = window.bundle.timeline.completion_time_hour
