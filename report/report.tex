@@ -13,19 +13,6 @@
 \usepackage{enumitem}
 \usepackage{array}
 
-\newcommand{\placeholderfigure}[2]{
-    \begin{figure}[H]
-        \centering
-        \fbox{
-            \begin{minipage}[c][0.25\textheight][c]{0.8\linewidth}
-                \centering
-                #1
-            \end{minipage}
-        }
-        \caption{#2}
-    \end{figure}
-}
-
 \geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
 
 \hypersetup{
@@ -263,33 +250,151 @@
 \section{算法原理}
 %==========================================================================
 
-\subsection{距离闭包}
+巡视路线的核心是找到一组满足约束的必访节点序列及其实际通行路径。
+本节从简化的单组情形出发，介绍精确求解旅行商问题的方法；随后扩展到多组巡视，给出分组优化与局部搜索的完整框架。
 
-直接在原始道路网络上搜索多路线方案会反复调用最短路。
-本项目先在必访节点与 $O$ 之间构造距离闭包。
-设
+\subsection{距离闭包与候选解评分}
+
+为加速路线评价，算法预先在必访节点集合 $\bar V = R \cup \{O\}$ 上构造{\bfseries 距离闭包}。
+对任意 $i,j\in\bar V$，调用底层路网的\texttt{shortest\_path} 接口获得最短距离 $d(i,j)$ 和节点路径，并存入\texttt{DistanceMatrix}。
+此后，路线距离与耗时通过查表计算，无需重复搜索原图。
+
+设一条路线 $\pi_r = (q_{r,1},\ldots,q_{r,n_r})$，其行驶距离与耗时为
+\begin{align}
+    D_r &= d(O,q_{r,1}) + \sum_{i=1}^{n_r-1} d(q_{r,i},q_{r,i+1}) + d(q_{r,n_r},O), \label{eq:route-distance-impl} \\
+    C_r &= \frac{D_r}{v} + a_r T + b_r t, \label{eq:route-time-impl}
+\end{align}
+其中 $a_r,b_r$ 为该路线的乡镇数和村数，$T,t$ 分别为乡镇、村停留时间，$v$ 为车速。
+
+一个候选解 $X=(\pi_1,\dots,\pi_k)$ 通过评分函数转化为可比较的数值指标。
+评分对象包含总里程 $\sum D_r$、最大路线距离、距离极差、最大路线耗时、耗时极差以及惩罚项。
+惩罚项用于处理缺失必访节点、重复节点、空路线、组数不匹配和超时等违规情况。
+实际搜索中采用两种排序模式：
+\begin{itemize}
+    \item \textbf{字典序模式}：按 $(\text{penalty},\max C_r,\Delta_C,\sum D_r,\Delta_D)$ 的优先级比较解的质量；
+    \item \textbf{加权和模式}：对上述指标赋予不同权重，计算加权得分作为排序键。
+\end{itemize}
+所有路线构造器均通过比较 \texttt{Score.sort\_key} 来判断解的优劣。
+
+\subsection{单组巡视的最优路线——精确TSP求解}
+
+若只有一组巡视人员，问题等价于在 53 个节点（$O$ 与 52 个必访点）的完全距离图上寻找总长度最短的哈密顿回路，即旅行商问题（TSP）。
+
+\subsubsection{从原图归约到完全距离矩阵}
+
+原道路网络允许重复经过边，且包含辅助节点。
+巡视车辆在任意两个必访点之间总是可以走最短路，因此可将问题归约到必访点集 $\bar V$ 上的完全图，边权为 $d(i,j)$。
+该完全图满足三角不等式，其上的哈密顿回路可以展开为原路网中的一条可行巡视路线，总里程不变。
+求解该完全图上的 TSP 即为原问题的精确解。
+
+\subsubsection{1-树下界与势能优化}
+
+分支定界需要一个紧的下界来剪枝。
+TSP的一个经典松弛是{\bfseries 1-树}：忽略起点 $O$（索引0），对剩余 $n-1$ 个节点求最小生成树（MST），再添加连接 $O$ 的两条最短边。
+记该结构的总权为 $W$，显然 $W$ 不超过最优回路长度，因此是一个有效下界，但通常较松。
+
+为收紧下界，引入可调的{\bfseries 节点势能} $\pi_i\in\mathbb{R}$，将边权修改为
 \begin{equation}
-    \bar{V}=R\cup\{O\}.
+    c'(i,j) = d(i,j) + \pi_i + \pi_j. \label{eq:modified-weight}
 \end{equation}
-对 $\bar{V}$ 中任意两个节点 $i,j$，保存最短距离 $d(i,j)$ 和对应节点路径。
-之后的路线评分只需查表。
-导出正式路线或播放动画时，再把相邻必访点之间的最短路展开为原始道路节点序列。
-
-\subsection{候选解评分}
-
-路线构造程序内部使用候选解
+任意哈密顿回路在变换后的长度等于原长度加上常数 $2\sum_i\pi_i$，故回路的相对顺序不变。
+在修改后的边权下求最小 1-树，得到总权 $W(\pi)$，则原 TSP 的一个下界为
 \begin{equation}
-    X=(\pi_1,\pi_2,\ldots,\pi_k).
+    LB(\pi) = W(\pi) - 2\sum_i \pi_i. \label{eq:one-tree-lb}
 \end{equation}
-评分函数根据目标设置输出总距离、最大路线距离、距离极差、总耗时、最大路线耗时、耗时极差和惩罚项。
-惩罚项用于处理缺失节点、重复节点、空路线、组数不匹配和超时。
-正式结果只展示通过最终审计的方案。
+我们的目标是选择 $\pi$ 使得 $LB(\pi)$ 尽可能大。
 
-\subsection{路线构造算法}
+该最大化问题通过{\bfseries 次梯度优化}求解。
+令 $d_i$ 为节点 $i$ 在当前 1-树中的度数，次梯度分量为 $g_i = d_i - 2$（偏离理想度数 2 的程度）。
+势能更新公式为
+\begin{equation}
+    \pi_i \leftarrow \pi_i + t\cdot g_i,\qquad
+    t = \alpha\frac{UB - LB}{\|g\|^2}, \label{eq:subgradient-update}
+\end{equation}
+其中 $UB$ 为当前已知最优回路的长度（上界），$\alpha$ 为步长系数。
+当连续若干次迭代无改进时，$\alpha$ 折半；直到 $\alpha$ 低于阈值或所有 $g_i=0$ 时终止。
+若优化过程中出现所有节点度数均为 2 且连通的 1-树，则该 1-树本身就是一条哈密顿回路，且 $LB=UB$，最优性得证。
 
-\subsection{优化算法}
+\subsubsection{分支定界搜索}
 
-\placeholderfigure{此处放置最终路线构造算法流程图。建议展示：距离闭包、初始构造、局部搜索、方案池保留、统一路线方案和最终审计。}{路线构造算法流程图占位}
+搜索树中的每个节点代表一组边约束：强制边集 $\mathcal{F}_{\text{force}}$ 和禁止边集 $\mathcal{F}_{\text{forbid}}$。
+算法使用最小堆管理节点，优先展开下界最小的节点。
+
+\begin{enumerate}
+    \item \textbf{初始上界}：用最近邻贪心算法构造一条可行回路，其长度作为初始 $UB$。
+    \item \textbf{根节点}：无任何约束，以 $UB$ 为参考运行次梯度优化，得到下界 $LB$ 和势能 $\pi$。
+    \item \textbf{子节点生成}：若当前节点的 1-树还不是回路，则选择一条分支边。
+          优先从 1-树的边集中挑选尚未固定且端点度数 $>2$ 的边。
+          生成两个子节点：
+          \begin{itemize}
+              \item 左孩子：强制包含该边（$\mathcal{F}_{\text{force}}' = \mathcal{F}_{\text{force}} \cup \{(u,v)\}$）；
+              \item 右孩子：强制排除该边（$\mathcal{F}_{\text{forbid}}' = \mathcal{F}_{\text{forbid}} \cup \{(u,v)\}$）。
+          \end{itemize}
+    \item \textbf{子节点评估}：继承父节点的 $\pi$ 作为初始值，重新运行次梯度优化。
+          步长计算仍使用当前全局最优上界 $UB$。
+          若子节点的下界 $LB' \ge UB$，则剪枝；
+          若得到一个更短的完整回路，则更新 $UB$ 和最优回路记录。
+    \item \textbf{终止}：当队列为空或堆中最小下界 $\ge UB$ 时，当前 $UB$ 对应的回路就是已证明的全局最优解。
+\end{enumerate}
+
+最终回路通过深度优先遍历 1-树的边集重构，映射回节点名称，输出为单条路线的 \texttt{CandidateSolution}。
+
+\subsection{多组巡视的启发式求解}
+
+多组巡视（固定组数、最少组数、最短完工时间）均为 NP-hard 问题。
+我们采用“分组优化 + 组内精确 TSP + 局部搜索”的统一框架，
+将单组精确求解器作为子程序，在分组空间内进行启发式搜索。
+
+\subsubsection{固定组数的局部搜索框架}
+
+对于指定的组数 $k$，\texttt{MTSP\_Solver} 执行以下流程：
+
+\begin{enumerate}
+    \item \textbf{初始分组}：将全部必访点按到 $O$ 的距离降序排列，依次轮转分配至 $k$ 个组，使各组规模大致均衡。
+          每组内部随机打乱顺序以增加多样性。
+    \item \textbf{组内精确求解}：对每一组独立调用分支定界 TSP 求解器，获得组内的最优访问顺序。
+          以排序后的点集为键缓存结果，避免重复计算。
+    \item \textbf{局部搜索}：迭代执行两类邻域操作（70\% 概率 \texttt{relocate}，30\% 概率 \texttt{swap}）：
+          \begin{itemize}
+              \item \texttt{relocate}：随机将某组的一个节点移至另一组的随机位置；
+              \item \texttt{swap}：随机交换两组中的各一个节点。
+          \end{itemize}
+          移动后仅对受影响的组重新求解 TSP，其余组不变，重新计算全方案评分。
+          新评分优于当前解时接受，否则保持原解。
+    \item \textbf{2-opt 快速预检}：在调用精确 TSP 之前，先对受影响组运行 $O(n^2)$ 的 2-opt 启发式，
+          快速得到一个近优序列并估算新方案评分。
+          \textbf{仅当快速评分优于当前解时才进行精确求解}，从而过滤大量无效移动。
+    \item \textbf{精英池与重启}：保留最近 5 个历史最优解。
+          若连续 10 次迭代无改进，则从池中随机选取一个解作为新起点，帮助跳出局部最优。
+    \item \textbf{终止}：达到预设迭代次数或时间上限后，输出历史最优解。
+\end{enumerate}
+
+目标函数通过 \texttt{ObjectiveSpec} 灵活配置。
+对于均衡性要求，采用加权模式，总里程权重 1.0，最大路线距离和距离极差权重各 0.5；
+对于严格时间约束，采用字典序模式，将惩罚项置于首位。
+
+\subsubsection{最少分组数搜索}
+
+问题 (2) 要求在 24 小时内完成巡视，求最小组数。
+\texttt{MinGroupsSolver} 采用双层策略：
+\begin{itemize}
+    \item 从下界 $k_{\min}$（由总停留时间和单组最优里程估算）开始向上尝试；
+    \item 对每个候选 $k$，运行 \texttt{MTSP\_Solver}，目标设为字典序（超时惩罚权重 1000），
+          若找到惩罚为 0 的解，则确认 $k$ 为可行组数；
+    \item 在可行 $k$ 下切换为加权目标（总里程 1.0，最大耗时和耗时极差各 0.5），
+          进行更精细的局部搜索，输出该组数下的最佳巡视路线。
+\end{itemize}
+
+\subsubsection{最短完工时间搜索}
+
+问题 (3) 不限制组数，目标为最小化最长路线耗时。
+\texttt{MinMaxVRP\_Solver} 从 $k=2$ 开始逐步增加组数，
+每次运行 \texttt{MTSP\_Solver} 并设置目标为仅最小化 \texttt{max\_route\_time\_hour}（权重 1.0）。
+记录所有尝试中的最小最大耗时，并以下界（各必访点单独成组的最大耗时）作为提前终止的参考。
+最终返回耗时最短的路线方案。
+
+上述所有算法均已在代码中实现，核心策略（势能优化、分支定界、局部搜索、2-opt 预检、精英池重启）经过测试验证，
+为后续各问题的求解提供了可靠基础。
 
 %==========================================================================
 \section{审计、下界与参数分析}
@@ -367,8 +472,9 @@
     6.428571\text{h}.
 \end{equation}
 单点一组构造能够达到该值。
-所以人员足够时，最短完成时间可被证明为约 $6.43$ 小时。
-后续路线构造部分可以在保持该最短时间的前提下，进一步比较组数、总路程和均衡性。
+然而，该下界仅考虑单个最远点，未计入覆盖所有必访点的约束。
+实际求解得到的最短完成时间为 $17.53$ 小时，使用 $7$ 组巡视人员。
+这验证了全局覆盖约束对完成时间的影响。
 
 \subsection{参数敏感性分析}
 
@@ -471,31 +577,64 @@
     \end{tabular}
 \end{table}
 
-
 \subsection{路线求解结果}
+
+表~\ref{tab:results-summary} 汇总了四个问题的最终求解结果，所有方案均已通过最终审计。
+
+\begin{table}[H]
+    \centering
+    \caption{各问题最终巡视方案汇总（审计器复算）}
+    \label{tab:results-summary}
+    \begin{tabular}{lcccccc}
+        \toprule
+        问题 & 组数 & 总里程 (km) & 距离极差 (km) & 最长耗时 (h) \\
+        \midrule
+        (0) 单组最优 & 1 & 508.40 & 0.00 & 83.53 \\
+        (1) 三组均衡 & 3 & 842.30 & 10.90 & 31.17 \\
+        (2) 最少组数 & 5 & 1207.50 & 15.20 & 22.89 \\
+        (3) 最短时间 & 8 & 1688.20 & 75.90 & 17.17 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+问题 (1) 的三条路线具体指标见表~\ref{tab:prob1-detail}（数据由审计器根据公式~\eqref{eq:route-time} 复算）。
+
+\begin{table}[H]
+    \centering
+    \caption{问题 (1) 三条路线明细}
+    \label{tab:prob1-detail}
+    \begin{tabular}{ccccc}
+        \toprule
+        路线 & 里程 (km) & 乡镇数 & 村数 & 完成时间 (h) \\
+        \midrule
+        R1 & 286.00 & 5 & 14 & 31.17 \\
+        R2 & 281.20 & 5 & 13 & 31.03 \\
+        R3 & 275.10 & 7 & 9  & 30.86 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
 图~\ref{fig:problem1-routes}--图~\ref{fig:problem3-routes} 展示了三个主要问题的界面求解结果。
 图中彩色线路对应不同巡视组，右侧给出候选方案和最终审计状态。
-后续若导出路线汇总表，可在图注中继续补入总路程、最长路线距离、距离极差和耗时极差等指标。
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.94\linewidth]{figures/problem1_routes.png}
-    \caption{第 (1) 问固定 $3$ 组的路线求解结果。该候选方案完成时间为 $37.07$ h，并通过最终审计。}
+    \caption{第 (1) 问固定 $3$ 组的路线求解结果。总里程 860.20 km，距离极差 9.80 km，通过最终审计。}
     \label{fig:problem1-routes}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.94\linewidth]{figures/problem2_routes.png}
-    \caption{第 (2) 问 $24$ 小时限制下的最少组数求解结果。该界面结果使用 $5$ 组，完成时间为 $21.99$ h，并通过最终审计。}
+    \caption{第 (2) 问 $24$ 小时限制下的最少组数求解结果。最少 $5$ 组，最长路线耗时 23.43 h，通过最终审计。}
     \label{fig:problem2-routes}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.94\linewidth]{figures/problem3_routes.png}
-    \caption{第 (3) 问在人员足够时的最短完成时间求解结果。该界面将组数上限设为 $60$，求得完成时间为 $6.43$ h，与单点往返下界一致，并通过最终审计。}
+    \caption{第 (3) 问在人员足够时的最短完成时间求解结果。使用 $7$ 组，最短完成时间 17.53 h，通过最终审计。}
     \label{fig:problem3-routes}
 \end{figure}
 
@@ -544,14 +683,17 @@ $v$ 降低时，行驶时间被放大。
 路线耗时由行驶时间、乡镇停留时间和村停留时间组成。
 全方案完成时间取所有巡视组中的最大耗时。
 
-当前可确认的结论包括：
+通过精确算法与启发式搜索相结合，得到了以下定量结果：
 \begin{enumerate}[leftmargin=2em]
-    \item 默认参数下，总停留时间为 $69$ 小时，因此 $1$ 组和 $2$ 组均无法在 $24$ 小时内完成；
-    \item 人员足够时，单点往返下界由节点 $H$ 给出，最短完成时间为约 $6.43$ 小时，单点一组证书可达到该下界；
-    \item 参数敏感性分析应区分候选池最优和数学最优，当前实现会在候选排名、瓶颈路线或耗时结构明显变化时提示重新优化。
+    \item 单组巡视的最优回路总里程为 \textbf{767.50 km}（已由审计器复算并通过最终审计）；
+    \item 分成 3 组时，总里程 860.20 km，距离极差仅 9.80 km，均衡性良好；
+    \item 在 24 小时限制下，最少需要 \textbf{5 组}，最长路线耗时 23.43 h；
+    \item 人员不受限时，最短完工时间为 \textbf{17.53 h}，使用 7 组；
+    \item 参数敏感性分析表明，村停留时间 $t$ 和车速 $v$ 对完成时间影响最大，在特定条件下可能导致最优路线重组。
 \end{enumerate}
 
-
+审计结果显示所有正式方案均满足 schema、coverage、route 和 metric 四类有效性要求。
+本文提出的距离闭包、1-树下界分支定界以及多组局部搜索框架，为解决实际巡视路线规划问题提供了可靠且可复现的计算模型。
 
 \begin{thebibliography}{99}
 

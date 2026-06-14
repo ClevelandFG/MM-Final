@@ -1,0 +1,921 @@
+{
+  "plan_id": "single-optimal",
+  "source": "branch_and_bound",
+  "formal_result": true,
+  "warnings": [],
+  "audit": {
+    "schema_valid": true,
+    "coverage_valid": true,
+    "route_valid": true,
+    "metric_valid": true,
+    "errors": [],
+    "warnings": []
+  },
+  "data_version": {
+    "git_commit": "29c2dbfc2747ea243e53000a05707068d9c44ac8",
+    "road_network_path": "data\\raw\\road_network.tsv",
+    "road_network_sha256": "4dbcb2c0efa20aa7b23d74cf6a7f8970eacabd7dc4d0522988199358eb8b77f6",
+    "route_plan_contract_version": "route-plan-v1"
+  },
+  "timeline": {
+    "plan_id": "single-optimal",
+    "source": "branch_and_bound",
+    "parameters": {
+      "T_hour": 2.0,
+      "t_hour": 1.0,
+      "speed_km_per_hour": 35.0,
+      "time_limit_hour": 24.0
+    },
+    "completion_time_hour": 83.52571428571429,
+    "route_total_time_hour": {
+      "R1": 83.52571428571429
+    },
+    "route_distance_km": {
+      "R1": 508.3999999999999
+    },
+    "segments_by_route_id": {
+      "R1": [
+        {
+          "kind": "travel",
+          "start_hour": 0.0,
+          "end_hour": 0.28857142857142853,
+          "source": "O",
+          "target": "P",
+          "distance_km": 10.1
+        },
+        {
+          "kind": "stop",
+          "start_hour": 0.28857142857142853,
+          "end_hour": 2.2885714285714287,
+          "source": "P",
+          "target": "P",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 2.2885714285714287,
+          "end_hour": 2.722857142857143,
+          "source": "P",
+          "target": "29",
+          "distance_km": 15.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 2.722857142857143,
+          "end_hour": 3.722857142857143,
+          "source": "29",
+          "target": "29",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 3.722857142857143,
+          "end_hour": 3.9485714285714284,
+          "source": "29",
+          "target": "R",
+          "distance_km": 7.9
+        },
+        {
+          "kind": "stop",
+          "start_hour": 3.9485714285714284,
+          "end_hour": 5.948571428571428,
+          "source": "R",
+          "target": "R",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 5.948571428571428,
+          "end_hour": 6.211428571428571,
+          "source": "R",
+          "target": "31",
+          "distance_km": 9.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 6.211428571428571,
+          "end_hour": 7.211428571428571,
+          "source": "31",
+          "target": "31",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 7.211428571428571,
+          "end_hour": 7.419999999999999,
+          "source": "31",
+          "target": "33",
+          "distance_km": 7.3
+        },
+        {
+          "kind": "stop",
+          "start_hour": 7.419999999999999,
+          "end_hour": 8.419999999999998,
+          "source": "33",
+          "target": "33",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 8.419999999999998,
+          "end_hour": 8.63142857142857,
+          "source": "33",
+          "target": "A",
+          "distance_km": 7.4
+        },
+        {
+          "kind": "stop",
+          "start_hour": 8.63142857142857,
+          "end_hour": 10.63142857142857,
+          "source": "A",
+          "target": "A",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 10.63142857142857,
+          "end_hour": 10.959999999999999,
+          "source": "A",
+          "target": "34",
+          "distance_km": 11.5
+        },
+        {
+          "kind": "stop",
+          "start_hour": 10.959999999999999,
+          "end_hour": 11.959999999999999,
+          "source": "34",
+          "target": "34",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 11.959999999999999,
+          "end_hour": 12.194285714285714,
+          "source": "34",
+          "target": "35",
+          "distance_km": 8.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 12.194285714285714,
+          "end_hour": 13.194285714285714,
+          "source": "35",
+          "target": "35",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 13.194285714285714,
+          "end_hour": 13.425714285714285,
+          "source": "35",
+          "target": "U4",
+          "distance_km": 8.1
+        },
+        {
+          "kind": "travel",
+          "start_hour": 13.425714285714285,
+          "end_hour": 13.62,
+          "source": "U4",
+          "target": "32",
+          "distance_km": 6.8
+        },
+        {
+          "kind": "stop",
+          "start_hour": 13.62,
+          "end_hour": 14.62,
+          "source": "32",
+          "target": "32",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 14.62,
+          "end_hour": 14.914285714285713,
+          "source": "32",
+          "target": "30",
+          "distance_km": 10.3
+        },
+        {
+          "kind": "stop",
+          "start_hour": 14.914285714285713,
+          "end_hour": 15.914285714285713,
+          "source": "30",
+          "target": "30",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 15.914285714285713,
+          "end_hour": 16.134285714285713,
+          "source": "30",
+          "target": "Q",
+          "distance_km": 7.7
+        },
+        {
+          "kind": "stop",
+          "start_hour": 16.134285714285713,
+          "end_hour": 18.134285714285713,
+          "source": "Q",
+          "target": "Q",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 18.134285714285713,
+          "end_hour": 18.37142857142857,
+          "source": "Q",
+          "target": "28",
+          "distance_km": 8.3
+        },
+        {
+          "kind": "stop",
+          "start_hour": 18.37142857142857,
+          "end_hour": 19.37142857142857,
+          "source": "28",
+          "target": "28",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 19.37142857142857,
+          "end_hour": 19.597142857142856,
+          "source": "28",
+          "target": "27",
+          "distance_km": 7.9
+        },
+        {
+          "kind": "stop",
+          "start_hour": 19.597142857142856,
+          "end_hour": 20.597142857142856,
+          "source": "27",
+          "target": "27",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 20.597142857142856,
+          "end_hour": 20.82,
+          "source": "27",
+          "target": "26",
+          "distance_km": 7.8
+        },
+        {
+          "kind": "stop",
+          "start_hour": 20.82,
+          "end_hour": 21.82,
+          "source": "26",
+          "target": "26",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 21.82,
+          "end_hour": 22.12,
+          "source": "26",
+          "target": "N",
+          "distance_km": 10.5
+        },
+        {
+          "kind": "stop",
+          "start_hour": 22.12,
+          "end_hour": 24.12,
+          "source": "N",
+          "target": "N",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 24.12,
+          "end_hour": 24.497142857142858,
+          "source": "N",
+          "target": "24",
+          "distance_km": 13.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 24.497142857142858,
+          "end_hour": 25.497142857142858,
+          "source": "24",
+          "target": "24",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 25.497142857142858,
+          "end_hour": 25.751428571428573,
+          "source": "24",
+          "target": "23",
+          "distance_km": 8.9
+        },
+        {
+          "kind": "stop",
+          "start_hour": 25.751428571428573,
+          "end_hour": 26.751428571428573,
+          "source": "23",
+          "target": "23",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 26.751428571428573,
+          "end_hour": 27.037142857142857,
+          "source": "23",
+          "target": "22",
+          "distance_km": 10.0
+        },
+        {
+          "kind": "stop",
+          "start_hour": 27.037142857142857,
+          "end_hour": 28.037142857142857,
+          "source": "22",
+          "target": "22",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 28.037142857142857,
+          "end_hour": 28.228571428571428,
+          "source": "22",
+          "target": "17",
+          "distance_km": 6.7
+        },
+        {
+          "kind": "stop",
+          "start_hour": 28.228571428571428,
+          "end_hour": 29.228571428571428,
+          "source": "17",
+          "target": "17",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 29.228571428571428,
+          "end_hour": 29.422857142857143,
+          "source": "17",
+          "target": "16",
+          "distance_km": 6.8
+        },
+        {
+          "kind": "stop",
+          "start_hour": 29.422857142857143,
+          "end_hour": 30.422857142857143,
+          "source": "16",
+          "target": "16",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 30.422857142857143,
+          "end_hour": 30.76,
+          "source": "16",
+          "target": "I",
+          "distance_km": 11.8
+        },
+        {
+          "kind": "stop",
+          "start_hour": 30.76,
+          "end_hour": 32.760000000000005,
+          "source": "I",
+          "target": "I",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 32.760000000000005,
+          "end_hour": 33.011428571428574,
+          "source": "I",
+          "target": "15",
+          "distance_km": 8.8
+        },
+        {
+          "kind": "stop",
+          "start_hour": 33.011428571428574,
+          "end_hour": 34.011428571428574,
+          "source": "15",
+          "target": "15",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 34.011428571428574,
+          "end_hour": 34.26285714285714,
+          "source": "15",
+          "target": "I",
+          "distance_km": 8.8
+        },
+        {
+          "kind": "travel",
+          "start_hour": 34.26285714285714,
+          "end_hour": 34.497142857142855,
+          "source": "I",
+          "target": "18",
+          "distance_km": 8.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 34.497142857142855,
+          "end_hour": 35.497142857142855,
+          "source": "18",
+          "target": "18",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 35.497142857142855,
+          "end_hour": 35.76,
+          "source": "18",
+          "target": "K",
+          "distance_km": 9.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 35.76,
+          "end_hour": 37.76,
+          "source": "K",
+          "target": "K",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 37.76,
+          "end_hour": 37.87714285714286,
+          "source": "K",
+          "target": "21",
+          "distance_km": 4.1
+        },
+        {
+          "kind": "stop",
+          "start_hour": 37.87714285714286,
+          "end_hour": 38.87714285714286,
+          "source": "21",
+          "target": "21",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 38.87714285714286,
+          "end_hour": 39.09428571428572,
+          "source": "21",
+          "target": "25",
+          "distance_km": 7.6
+        },
+        {
+          "kind": "stop",
+          "start_hour": 39.09428571428572,
+          "end_hour": 40.09428571428572,
+          "source": "25",
+          "target": "25",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 40.09428571428572,
+          "end_hour": 40.28,
+          "source": "25",
+          "target": "20",
+          "distance_km": 6.5
+        },
+        {
+          "kind": "stop",
+          "start_hour": 40.28,
+          "end_hour": 41.28,
+          "source": "20",
+          "target": "20",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 41.28,
+          "end_hour": 41.43714285714286,
+          "source": "20",
+          "target": "L",
+          "distance_km": 5.5
+        },
+        {
+          "kind": "stop",
+          "start_hour": 41.43714285714286,
+          "end_hour": 43.43714285714286,
+          "source": "L",
+          "target": "L",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 43.43714285714286,
+          "end_hour": 43.642857142857146,
+          "source": "L",
+          "target": "19",
+          "distance_km": 7.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 43.642857142857146,
+          "end_hour": 44.642857142857146,
+          "source": "19",
+          "target": "19",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 44.642857142857146,
+          "end_hour": 44.87428571428572,
+          "source": "19",
+          "target": "J",
+          "distance_km": 8.1
+        },
+        {
+          "kind": "stop",
+          "start_hour": 44.87428571428572,
+          "end_hour": 46.87428571428572,
+          "source": "J",
+          "target": "J",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 46.87428571428572,
+          "end_hour": 47.251428571428576,
+          "source": "J",
+          "target": "11",
+          "distance_km": 13.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 47.251428571428576,
+          "end_hour": 48.251428571428576,
+          "source": "11",
+          "target": "11",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 48.251428571428576,
+          "end_hour": 48.44571428571429,
+          "source": "11",
+          "target": "G",
+          "distance_km": 6.8
+        },
+        {
+          "kind": "stop",
+          "start_hour": 48.44571428571429,
+          "end_hour": 50.44571428571429,
+          "source": "G",
+          "target": "G",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 50.44571428571429,
+          "end_hour": 50.691428571428574,
+          "source": "G",
+          "target": "13",
+          "distance_km": 8.6
+        },
+        {
+          "kind": "stop",
+          "start_hour": 50.691428571428574,
+          "end_hour": 51.691428571428574,
+          "source": "13",
+          "target": "13",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 51.691428571428574,
+          "end_hour": 51.93714285714286,
+          "source": "13",
+          "target": "14",
+          "distance_km": 8.6
+        },
+        {
+          "kind": "stop",
+          "start_hour": 51.93714285714286,
+          "end_hour": 52.93714285714286,
+          "source": "14",
+          "target": "14",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 52.93714285714286,
+          "end_hour": 53.22,
+          "source": "14",
+          "target": "H",
+          "distance_km": 9.9
+        },
+        {
+          "kind": "stop",
+          "start_hour": 53.22,
+          "end_hour": 55.22,
+          "source": "H",
+          "target": "H",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 55.22,
+          "end_hour": 55.51142857142857,
+          "source": "H",
+          "target": "12",
+          "distance_km": 10.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 55.51142857142857,
+          "end_hour": 56.51142857142857,
+          "source": "12",
+          "target": "12",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 56.51142857142857,
+          "end_hour": 56.85999999999999,
+          "source": "12",
+          "target": "F",
+          "distance_km": 12.2
+        },
+        {
+          "kind": "stop",
+          "start_hour": 56.85999999999999,
+          "end_hour": 58.85999999999999,
+          "source": "F",
+          "target": "F",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 58.85999999999999,
+          "end_hour": 59.16857142857142,
+          "source": "F",
+          "target": "10",
+          "distance_km": 10.8
+        },
+        {
+          "kind": "stop",
+          "start_hour": 59.16857142857142,
+          "end_hour": 60.16857142857142,
+          "source": "10",
+          "target": "10",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 60.16857142857142,
+          "end_hour": 60.477142857142844,
+          "source": "10",
+          "target": "F",
+          "distance_km": 10.8
+        },
+        {
+          "kind": "travel",
+          "start_hour": 60.477142857142844,
+          "end_hour": 60.63714285714284,
+          "source": "F",
+          "target": "9",
+          "distance_km": 5.6
+        },
+        {
+          "kind": "stop",
+          "start_hour": 60.63714285714284,
+          "end_hour": 61.63714285714284,
+          "source": "9",
+          "target": "9",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 61.63714285714284,
+          "end_hour": 61.859999999999985,
+          "source": "9",
+          "target": "E",
+          "distance_km": 7.8
+        },
+        {
+          "kind": "stop",
+          "start_hour": 61.859999999999985,
+          "end_hour": 63.859999999999985,
+          "source": "E",
+          "target": "E",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 63.859999999999985,
+          "end_hour": 64.08857142857141,
+          "source": "E",
+          "target": "8",
+          "distance_km": 8.0
+        },
+        {
+          "kind": "stop",
+          "start_hour": 64.08857142857141,
+          "end_hour": 65.08857142857141,
+          "source": "8",
+          "target": "8",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 65.08857142857141,
+          "end_hour": 65.43999999999998,
+          "source": "8",
+          "target": "U6",
+          "distance_km": 12.3
+        },
+        {
+          "kind": "travel",
+          "start_hour": 65.43999999999998,
+          "end_hour": 65.67142857142855,
+          "source": "U6",
+          "target": "4",
+          "distance_km": 8.1
+        },
+        {
+          "kind": "stop",
+          "start_hour": 65.67142857142855,
+          "end_hour": 66.67142857142855,
+          "source": "4",
+          "target": "4",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 66.67142857142855,
+          "end_hour": 67.03428571428569,
+          "source": "4",
+          "target": "D",
+          "distance_km": 12.7
+        },
+        {
+          "kind": "stop",
+          "start_hour": 67.03428571428569,
+          "end_hour": 69.03428571428569,
+          "source": "D",
+          "target": "D",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 69.03428571428569,
+          "end_hour": 69.46571428571426,
+          "source": "D",
+          "target": "7",
+          "distance_km": 15.1
+        },
+        {
+          "kind": "stop",
+          "start_hour": 69.46571428571426,
+          "end_hour": 70.46571428571426,
+          "source": "7",
+          "target": "7",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 70.46571428571426,
+          "end_hour": 70.67428571428569,
+          "source": "7",
+          "target": "6",
+          "distance_km": 7.3
+        },
+        {
+          "kind": "stop",
+          "start_hour": 70.67428571428569,
+          "end_hour": 71.67428571428569,
+          "source": "6",
+          "target": "6",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 71.67428571428569,
+          "end_hour": 71.94571428571426,
+          "source": "6",
+          "target": "M",
+          "distance_km": 9.5
+        },
+        {
+          "kind": "stop",
+          "start_hour": 71.94571428571426,
+          "end_hour": 73.94571428571426,
+          "source": "M",
+          "target": "M",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 73.94571428571426,
+          "end_hour": 74.27142857142854,
+          "source": "M",
+          "target": "5",
+          "distance_km": 11.4
+        },
+        {
+          "kind": "stop",
+          "start_hour": 74.27142857142854,
+          "end_hour": 75.27142857142854,
+          "source": "5",
+          "target": "5",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 75.27142857142854,
+          "end_hour": 75.5085714285714,
+          "source": "5",
+          "target": "2",
+          "distance_km": 8.3
+        },
+        {
+          "kind": "stop",
+          "start_hour": 75.5085714285714,
+          "end_hour": 76.5085714285714,
+          "source": "2",
+          "target": "2",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 76.5085714285714,
+          "end_hour": 76.64571428571426,
+          "source": "2",
+          "target": "3",
+          "distance_km": 4.8
+        },
+        {
+          "kind": "stop",
+          "start_hour": 76.64571428571426,
+          "end_hour": 77.64571428571426,
+          "source": "3",
+          "target": "3",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 77.64571428571426,
+          "end_hour": 77.87142857142855,
+          "source": "3",
+          "target": "C",
+          "distance_km": 7.9
+        },
+        {
+          "kind": "stop",
+          "start_hour": 77.87142857142855,
+          "end_hour": 79.87142857142855,
+          "source": "C",
+          "target": "C",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 79.87142857142855,
+          "end_hour": 80.18571428571427,
+          "source": "C",
+          "target": "B",
+          "distance_km": 11.0
+        },
+        {
+          "kind": "stop",
+          "start_hour": 80.18571428571427,
+          "end_hour": 82.18571428571427,
+          "source": "B",
+          "target": "B",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 82.18571428571427,
+          "end_hour": 82.29714285714284,
+          "source": "B",
+          "target": "U5",
+          "distance_km": 3.9
+        },
+        {
+          "kind": "travel",
+          "start_hour": 82.29714285714284,
+          "end_hour": 82.35428571428571,
+          "source": "U5",
+          "target": "1",
+          "distance_km": 2.0
+        },
+        {
+          "kind": "stop",
+          "start_hour": 82.35428571428571,
+          "end_hour": 83.35428571428571,
+          "source": "1",
+          "target": "1",
+          "distance_km": 0.0
+        },
+        {
+          "kind": "travel",
+          "start_hour": 83.35428571428571,
+          "end_hour": 83.52571428571429,
+          "source": "1",
+          "target": "O",
+          "distance_km": 6.0
+        }
+      ]
+    }
+  }
+}

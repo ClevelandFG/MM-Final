@@ -57,7 +57,7 @@ if __name__ == "__main__":
         source="branch_and_bound",
         parameters={"T_hour": 2.0, "t_hour": 1.0, "speed_km_per_hour": 35.0},
         distance_matrix=dm,
-        include_expanded_paths=True
+        include_expanded_paths=False
     )
     write_plan(plan0, "single_optimal.json", out_dir)
     print("  单组最优已导出。")
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         source="mtsp_local_search",
         parameters={"T_hour": 2.0, "t_hour": 1.0, "speed_km_per_hour": 35.0},
         distance_matrix=dm,
-        include_expanded_paths=True
+        include_expanded_paths=False
     )
     write_plan(plan1, "problem1_3groups.json", out_dir)
     print("  3组均衡已导出。")
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         source="min_groups_search",
         parameters={"T_hour": 2.0, "t_hour": 1.0, "speed_km_per_hour": 35.0, "time_limit_hour": 24.0},
         distance_matrix=dm,
-        include_expanded_paths=True
+        include_expanded_paths=False
     )
     write_plan(plan2, "problem2_min_groups.json", out_dir)
     print("  最少分组已导出。")
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         source="minmax_vrp_search",
         parameters={"T_hour": 2.0, "t_hour": 1.0, "speed_km_per_hour": 35.0},
         distance_matrix=dm,
-        include_expanded_paths=True
+        include_expanded_paths=False
     )
     write_plan(plan3, "problem3_minmax_time.json", out_dir)
     print("  最短时间已导出。")
